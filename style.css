@@ -1,22 +1,20 @@
 body {
   font-family: Optima, Avenir, "Avenir Next", "Gill Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
   background: #f0f8fc;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 20px 40px;
   margin: 0;
+  padding: 24px;
   color: #333;
 }
 
 .container {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
   align-items: flex-start;
-  gap: 30px;
-  max-width: 1200px;
+  gap: 32px;
+  max-width: 1250px;
   width: 100%;
+  margin: 0 auto;
 }
 
 .left {
@@ -24,7 +22,8 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 15px;
-  min-width: 300px;
+  width: 320px;
+  flex: 0 0 320px;
 }
 
 .title-block {
@@ -51,8 +50,8 @@ h1 {
 }
 
 .upload-img {
-  width: clamp(180px, 25vw, 250px);
-  height: clamp(180px, 25vw, 250px);
+  width: 250px;
+  height: 250px;
   border: 2px dashed #aaa;
   border-radius: 10px;
   object-fit: cover;
@@ -63,11 +62,12 @@ h1 {
   background-color: white;
   border-radius: 8px;
   padding: 10px 12px;
-  width: clamp(220px, 28vw, 300px);
+  width: 100%;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-sizing: border-box;
 }
 
 .info-box label {
@@ -113,6 +113,7 @@ h1 {
   flex-direction: column;
   gap: 10px;
   align-items: center;
+  width: 100%;
 }
 
 label {
@@ -120,9 +121,10 @@ label {
   font-size: 15px;
   display: flex;
   justify-content: space-between;
-  width: clamp(220px, 80%, 300px);
+  width: 100%;
   align-items: center;
   gap: 10px;
+  box-sizing: border-box;
 }
 
 input[type="text"] {
@@ -135,7 +137,7 @@ input[type="text"] {
 }
 
 input[type="file"] {
-  max-width: 300px;
+  max-width: 100%;
 }
 
 input[type="color"] {
@@ -151,7 +153,7 @@ button {
   margin-top: 4px;
   padding: 8px 14px;
   font-family: inherit;
-  font-weight: 700;
+  font-weight: 400;
   background-color: #92dfec;
   border: none;
   border-radius: 6px;
@@ -172,18 +174,18 @@ button:hover {
 }
 
 .chart-area {
-  position: relative;
-  width: clamp(320px, 42vw, 560px);
-  height: clamp(320px, 42vw, 560px);
+  width: 560px;
+  height: 560px;
   background: white;
   border-radius: 16px;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
   padding: 18px;
   box-sizing: border-box;
+  flex: 0 0 560px;
 }
 
 .notes {
-  width: clamp(220px, 80%, 300px);
+  width: 100%;
   background: #ffffff;
   border-radius: 8px;
   padding: 10px 12px;
@@ -191,6 +193,7 @@ button:hover {
   font-size: 13px;
   line-height: 1.4;
   font-weight: 400;
+  box-sizing: border-box;
 }
 
 .overlay {
@@ -301,7 +304,22 @@ button:hover {
   right: 10px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 980px) {
+  .container {
+    flex-wrap: wrap;
+  }
+
+  .left,
+  .chart-area {
+    flex: unset;
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .chart-area {
+    height: 560px;
+  }
+
   .character-box {
     flex-direction: column;
     width: 92vw;
