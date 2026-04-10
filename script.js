@@ -116,7 +116,7 @@ const axisTitlesPlugin = {
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = 'italic 18px Arial';
+    ctx.font = 'italic 16px Arial';
     ctx.strokeStyle = currentColor;
     ctx.fillStyle = 'white';
     ctx.lineWidth = 4;
@@ -160,7 +160,7 @@ function createRadar(canvasId, withBackground) {
       responsive: true,
       maintainAspectRatio: true,
       layout: {
-        padding: { top: 25, bottom: 25, left: 10, right: 10 }
+        padding: { top: 22, bottom: 22, left: 8, right: 8 }
       },
       scales: {
         r: {
