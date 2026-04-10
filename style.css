@@ -194,7 +194,6 @@ input[type="color"] {
 }
 
 .adjust-btn,
-.lock-btn,
 button {
   font-family: var(--font-stack);
   font-weight: 400;
@@ -218,21 +217,8 @@ button {
   line-height: 1;
 }
 
-.lock-btn {
-  min-width: 50px;
-  height: 28px;
-  padding: 0 8px;
-  font-size: 13px;
-}
-
-.lock-btn.locked {
-  background-color: #6db5c0;
-  color: white;
-}
-
 button:hover,
-.adjust-btn:hover,
-.lock-btn:hover {
+.adjust-btn:hover {
   background-color: #6db5c0;
   color: white;
 }
