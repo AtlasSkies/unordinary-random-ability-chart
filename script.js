@@ -226,7 +226,6 @@ function buildStatsFromLevel(level) {
   const baseSum = baseWeights.reduce((a, b) => a + b, 0);
 
   let maxStats = baseWeights.map(w => (w / baseSum) * targetTotal);
-
   maxStats = maxStats.map(v => clamp(v + rand(-0.7, 0.7), 0.6, statCap));
 
   let currentSum = sum(maxStats);
@@ -267,10 +266,8 @@ function generateAbility() {
   return buildStatsFromLevel(level);
 }
 
-function updateAvailablePoints() {
-  const available = round1(generatedTotal - sum(currentAbility.stats));
-  document.getElementById('availablePoints').textContent = available.toFixed(1);
-  return available;
+function getAvailablePoints() {
+  return round1(generatedTotal - sum(currentAbility.stats));
 }
 
 function updateMainChart() {
@@ -289,12 +286,7 @@ function updateDisplay(ability) {
   document.getElementById('trickDisplay').textContent = ability.stats[2].toFixed(1);
   document.getElementById('recoveryDisplay').textContent = ability.stats[3].toFixed(1);
   document.getElementById('defenseDisplay').textContent = ability.stats[4].toFixed(1);
-  updateAvailablePoints();
   updateMainChart();
-}
-
-function setStatus(message) {
-  document.getElementById('statusNote').textContent = message;
 }
 
 function runGeneration() {
@@ -307,7 +299,6 @@ function runGeneration() {
   generatedTotal = rolled.total;
 
   updateDisplay(currentAbility);
-  setStatus('You can lower any stat, then use those freed points to raise other stats up to their generated max.');
 
   if (!hasGenerated) {
     hasGenerated = true;
@@ -316,40 +307,22 @@ function runGeneration() {
 }
 
 function adjustStat(index, direction) {
-  if (!hasGenerated || !currentAbility) {
-    setStatus('Generate an ability first.');
-    return;
-  }
+  if (!hasGenerated || !currentAbility) return;
 
   if (direction === 'down') {
-    if (currentAbility.stats[index] <= 0) {
-      setStatus(`${LABELS[index]} is already at 0.`);
-      return;
-    }
-
+    if (currentAbility.stats[index] <= 0) return;
     currentAbility.stats[index] = round1(Math.max(0, currentAbility.stats[index] - STEP));
     updateDisplay(currentAbility);
-    setStatus(`${LABELS[index]} decreased. You now have more available points.`);
     return;
   }
 
-  const available = updateAvailablePoints();
-
-  if (available < STEP) {
-    setStatus('No available points left. Lower another stat first.');
-    return;
-  }
-
-  if (currentAbility.stats[index] >= generatedMaxStats[index]) {
-    setStatus(`${LABELS[index]} is already at its generated max.`);
-    return;
-  }
+  const available = getAvailablePoints();
+  if (available < STEP) return;
+  if (currentAbility.stats[index] >= generatedMaxStats[index]) return;
 
   const add = Math.min(STEP, available, generatedMaxStats[index] - currentAbility.stats[index]);
   currentAbility.stats[index] = round1(currentAbility.stats[index] + add);
-
   updateDisplay(currentAbility);
-  setStatus(`${LABELS[index]} increased.`);
 }
 
 document.getElementById('generateBtn').addEventListener('click', runGeneration);
@@ -487,5 +460,4 @@ window.addEventListener('load', () => {
   document.getElementById('generateBtn').textContent = 'Generate Ability';
 
   updateDisplay(currentAbility);
-  setStatus('Generate an ability, then lower and raise stats manually without going above the generated total.');
 });
