@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UnOrdinary Random Ability Chart</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="left">
+      <div class="title-block">
+        <h1>UnOrdinary Random Ability Chart</h1>
+        <div class="subtitle">Randomized level and stat generator</div>
+      </div>
+
+      <input type="file" accept="image/*" id="imgInput" />
+      <img id="uploadedImg" class="upload-img" alt="Uploaded Image" />
+
+      <div class="info-box">
+        <label><b>Name:</b> <input type="text" id="nameInput" /></label>
+        <label><b>Ability:</b> <input type="text" id="abilityInput" /></label>
+
+        <div class="generated-row"><span>Level</span><span id="levelDisplay">-</span></div>
+        <div class="generated-row"><span>Power</span><span id="powerDisplay">-</span></div>
+        <div class="generated-row"><span>Speed</span><span id="speedDisplay">-</span></div>
+        <div class="generated-row"><span>Trick</span><span id="trickDisplay">-</span></div>
+        <div class="generated-row"><span>Recovery</span><span id="recoveryDisplay">-</span></div>
+        <div class="generated-row"><span>Defense</span><span id="defenseDisplay">-</span></div>
+      </div>
+
+      <div class="controls">
+        <div class="button-row">
+          <button id="rerollBtn">Ability Reroll</button>
+          <button id="viewBtn">View Character Chart</button>
+        </div>
+      </div>
+
+      <div class="notes">
+        <b>How this version works:</b><br>
+        The program randomly generates a level using weighted ranges centered near 2.7, then builds five ability stats from a shared stat budget. Higher levels usually get stronger totals, but the stats can still roll below the cap. Levels below 6.5 cannot roll a 10.
+      </div>
+    </div>
+
+    <div class="chart-area">
+      <canvas id="mainChart"></canvas>
+    </div>
+  </div>
+
+  <div id="overlay" class="overlay hidden">
+    <div id="characterBox" class="character-box">
+      <button id="closeBtn" class="close-btn">×</button>
+
+      <div class="image-section">
+        <div class="overlay-img-wrap">
+          <img id="overlayImg" class="overlay-img" alt="Character Image" />
+          <div class="img-watermark">AS</div>
+        </div>
+        <div class="text-box">
+          <b>Name:</b> <span id="overlayName">-</span><br />
+          <b>Ability:</b> <span id="overlayAbility">-</span><br />
+          <b>Level:</b> <span id="overlayLevel">-</span>
+        </div>
+      </div>
+
+      <div class="overlay-chart">
+        <canvas id="overlayChartCanvas"></canvas>
+      </div>
+
+      <button id="downloadBtn">Download Character Chart</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
