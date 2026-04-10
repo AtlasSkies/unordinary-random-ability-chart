@@ -3,6 +3,15 @@ const FILL_ALPHA = 0.65;
 const LABELS = ['Power', 'Speed', 'Trick', 'Recovery', 'Defense'];
 const STEP = 0.1;
 
+/*
+  Growth model:
+  - Level 1.0 = all five stats are exactly 1.0
+  - Above level 1, extra total power grows exponentially
+  - This is a model, not a canon formula
+*/
+const POWER_EXPONENT = 1.85;
+const POWER_MULTIPLIER = 1.15;
+
 let currentAbility = null;
 let generatedTotal = 0;
 let currentColor = DEFAULT_COLOR;
@@ -69,6 +78,7 @@ const radarBackgroundPlugin = {
     ctx.fill();
     ctx.restore();
   },
+
   afterDatasetsDraw(chart) {
     const opts = chart.config.options.customBackground;
     if (!opts?.enabled) return;
@@ -203,44 +213,54 @@ function weightedLevelRoll() {
   return round1(rand(6.0, 10.0));
 }
 
-function getBudgetRange(level) {
-  if (level < 2.0) return [4.0, 11.0];
-  if (level < 3.5) return [7.0, 17.0];
-  if (level < 5.0) return [11.0, 24.0];
-  if (level < 6.5) return [16.0, 31.0];
-  if (level < 8.0) return [22.0, 39.0];
-  return [28.0, 46.0];
-}
-
 function getStatCap(level) {
   return level < 6.5 ? 9.9 : 20.0;
 }
 
-function buildStatsFromLevel(level) {
-  const [budgetMin, budgetMax] = getBudgetRange(level);
-  const statCap = getStatCap(level);
-  const targetTotal = round1(rand(budgetMin, budgetMax));
+function getTargetTotal(level) {
+  if (level <= 1) {
+    return 5.0;
+  }
 
-  let weights = Array.from({ length: 5 }, () => rand(0.6, 1.8));
+  const extra = POWER_MULTIPLIER * Math.pow(level - 1, POWER_EXPONENT);
+  return round1(5 + extra);
+}
+
+function buildStatsFromLevel(level) {
+  const statCap = getStatCap(level);
+
+  if (level <= 1.0) {
+    return {
+      level,
+      stats: [1, 1, 1, 1, 1],
+      total: 5.0
+    };
+  }
+
+  const targetTotal = getTargetTotal(level);
+
+  let weights = Array.from({ length: 5 }, () => rand(0.7, 1.9));
   const weightSum = weights.reduce((a, b) => a + b, 0);
 
   let stats = weights.map(w => (w / weightSum) * targetTotal);
-  stats = stats.map(v => clamp(v + rand(-0.7, 0.7), 0.6, statCap));
+
+  // Base floor of 1, since level 1 means all basics are 1
+  stats = stats.map(v => clamp(v + rand(-0.6, 0.6), 1.0, statCap));
 
   let currentSum = sum(stats);
   let loops = 0;
 
-  while (currentSum > targetTotal && loops < 700) {
+  while (currentSum > targetTotal && loops < 1200) {
     const i = Math.floor(Math.random() * 5);
-    if (stats[i] > 0.6) {
-      stats[i] = round1(Math.max(0.6, stats[i] - 0.1));
+    if (stats[i] > 1.0) {
+      stats[i] = round1(Math.max(1.0, stats[i] - 0.1));
       currentSum = sum(stats);
     }
     loops++;
   }
 
   loops = 0;
-  while (currentSum < targetTotal && loops < 700) {
+  while (currentSum < targetTotal && loops < 1200) {
     const i = Math.floor(Math.random() * 5);
     if (stats[i] < statCap) {
       const add = Math.min(0.1, statCap - stats[i], targetTotal - currentSum);
@@ -311,10 +331,11 @@ function adjustStat(index, direction) {
   if (!hasGenerated || !currentAbility) return;
 
   const statCap = getStatCap(currentAbility.level);
+  const statFloor = currentAbility.level <= 1 ? 1.0 : 0.0;
 
   if (direction === 'down') {
-    if (currentAbility.stats[index] <= 0) return;
-    currentAbility.stats[index] = round1(Math.max(0, currentAbility.stats[index] - STEP));
+    if (currentAbility.stats[index] <= statFloor) return;
+    currentAbility.stats[index] = round1(Math.max(statFloor, currentAbility.stats[index] - STEP));
     updateDisplay(currentAbility);
     return;
   }
