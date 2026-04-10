@@ -5,7 +5,7 @@ const STEP = 0.1;
 
 let currentAbility = null;
 let generatedMaxStats = [0, 0, 0, 0, 0];
-let lockedStats = [false, false, false, false, false];
+let generatedTotal = 0;
 let currentColor = DEFAULT_COLOR;
 let overlayChart = null;
 let hasGenerated = false;
@@ -30,7 +30,11 @@ function clamp(value, min, max) {
 }
 
 function sum(arr) {
-  return arr.reduce((a, b) => a + b, 0);
+  return round1(arr.reduce((a, b) => a + b, 0));
+}
+
+function rand(min, max) {
+  return Math.random() * (max - min) + min;
 }
 
 const radarBackgroundPlugin = {
@@ -188,10 +192,6 @@ function createRadar(canvasId, withBackground) {
 
 const mainChart = createRadar('mainChart', true);
 
-function rand(min, max) {
-  return Math.random() * (max - min) + min;
-}
-
 function weightedLevelRoll() {
   const roll = Math.random() * 100;
 
@@ -220,43 +220,45 @@ function getStatCap(level) {
 function buildStatsFromLevel(level) {
   const [budgetMin, budgetMax] = getBudgetRange(level);
   const statCap = getStatCap(level);
-  const totalBudget = rand(budgetMin, budgetMax);
+  const targetTotal = round1(rand(budgetMin, budgetMax));
 
-  let weights = Array.from({ length: 5 }, () => rand(0.4, 1.7));
-  const weightSum = sum(weights);
+  let baseWeights = Array.from({ length: 5 }, () => rand(0.6, 1.8));
+  const baseSum = baseWeights.reduce((a, b) => a + b, 0);
 
-  let stats = weights.map(w => (w / weightSum) * totalBudget);
-  stats = stats.map(v => clamp(v + rand(-0.45, 0.45), 0.8, statCap));
+  let maxStats = baseWeights.map(w => (w / baseSum) * targetTotal);
 
-  let currentSum = sum(stats);
+  maxStats = maxStats.map(v => clamp(v + rand(-0.7, 0.7), 0.6, statCap));
+
+  let currentSum = sum(maxStats);
   let loops = 0;
 
-  while (currentSum > totalBudget && loops < 400) {
+  while (currentSum > targetTotal && loops < 600) {
     const i = Math.floor(Math.random() * 5);
-    if (stats[i] > 0.8) {
-      stats[i] = Math.max(0.8, stats[i] - 0.1);
-      currentSum = sum(stats);
+    if (maxStats[i] > 0.6) {
+      maxStats[i] = round1(Math.max(0.6, maxStats[i] - 0.1));
+      currentSum = sum(maxStats);
     }
     loops++;
   }
 
   loops = 0;
-  while (currentSum < totalBudget - 0.15 && loops < 500) {
+  while (currentSum < targetTotal && loops < 600) {
     const i = Math.floor(Math.random() * 5);
-    if (stats[i] < statCap) {
-      const add = Math.min(0.1, totalBudget - currentSum, statCap - stats[i]);
-      stats[i] += add;
-      currentSum = sum(stats);
+    if (maxStats[i] < statCap) {
+      const add = Math.min(0.1, statCap - maxStats[i], targetTotal - currentSum);
+      maxStats[i] = round1(maxStats[i] + add);
+      currentSum = sum(maxStats);
     }
     loops++;
   }
 
-  stats = stats.map(round1);
+  maxStats = maxStats.map(v => round1(v));
 
   return {
     level,
-    stats,
-    budget: round1(totalBudget)
+    stats: [...maxStats],
+    maxStats: [...maxStats],
+    total: sum(maxStats)
   };
 }
 
@@ -265,12 +267,10 @@ function generateAbility() {
   return buildStatsFromLevel(level);
 }
 
-function updateLockButtons() {
-  lockedStats.forEach((locked, i) => {
-    const btn = document.getElementById(`lock${i}`);
-    btn.textContent = locked ? 'Locked' : 'Lock';
-    btn.classList.toggle('locked', locked);
-  });
+function updateAvailablePoints() {
+  const available = round1(generatedTotal - sum(currentAbility.stats));
+  document.getElementById('availablePoints').textContent = available.toFixed(1);
+  return available;
 }
 
 function updateMainChart() {
@@ -289,7 +289,7 @@ function updateDisplay(ability) {
   document.getElementById('trickDisplay').textContent = ability.stats[2].toFixed(1);
   document.getElementById('recoveryDisplay').textContent = ability.stats[3].toFixed(1);
   document.getElementById('defenseDisplay').textContent = ability.stats[4].toFixed(1);
-  updateLockButtons();
+  updateAvailablePoints();
   updateMainChart();
 }
 
@@ -297,77 +297,22 @@ function setStatus(message) {
   document.getElementById('statusNote').textContent = message;
 }
 
-function resetLocks() {
-  lockedStats = [false, false, false, false, false];
-}
-
 function runGeneration() {
-  currentAbility = generateAbility();
-  generatedMaxStats = [...currentAbility.stats];
-  resetLocks();
+  const rolled = generateAbility();
+  currentAbility = {
+    level: rolled.level,
+    stats: [...rolled.stats]
+  };
+  generatedMaxStats = [...rolled.maxStats];
+  generatedTotal = rolled.total;
+
   updateDisplay(currentAbility);
-  setStatus('Generated max values saved. You can lower stats and raise them back up to those max values.');
+  setStatus('You can lower any stat, then use those freed points to raise other stats up to their generated max.');
 
   if (!hasGenerated) {
     hasGenerated = true;
     document.getElementById('generateBtn').textContent = 'Regenerate Ability';
   }
-}
-
-function toggleLock(index) {
-  if (!hasGenerated) return;
-  lockedStats[index] = !lockedStats[index];
-  updateLockButtons();
-}
-
-function redistribute(indices, amount, mode) {
-  let remaining = round1(amount);
-
-  while (remaining > 0.0001) {
-    const eligible = indices.filter(i => {
-      const value = currentAbility.stats[i];
-      const maxValue = generatedMaxStats[i];
-
-      if (mode === 'decrease') {
-        return value > 0;
-      }
-      return value < maxValue;
-    });
-
-    if (eligible.length === 0) break;
-
-    let movedSomething = false;
-
-    for (const i of eligible) {
-      if (remaining <= 0.0001) break;
-
-      const value = currentAbility.stats[i];
-      const maxValue = generatedMaxStats[i];
-      let possible = 0;
-
-      if (mode === 'decrease') {
-        possible = round1(value);
-      } else {
-        possible = round1(maxValue - value);
-      }
-
-      const move = Math.min(STEP, possible, remaining);
-      if (move <= 0) continue;
-
-      if (mode === 'decrease') {
-        currentAbility.stats[i] = round1(value - move);
-      } else {
-        currentAbility.stats[i] = round1(value + move);
-      }
-
-      remaining = round1(remaining - move);
-      movedSomething = true;
-    }
-
-    if (!movedSomething) break;
-  }
-
-  return round1(amount - remaining);
 }
 
 function adjustStat(index, direction) {
@@ -376,62 +321,35 @@ function adjustStat(index, direction) {
     return;
   }
 
-  if (lockedStats[index]) {
-    setStatus(`${LABELS[index]} is locked.`);
-    return;
-  }
-
-  const currentValue = currentAbility.stats[index];
-  const maxValue = generatedMaxStats[index];
-  const otherUnlocked = [0, 1, 2, 3, 4].filter(i => i !== index && !lockedStats[i]);
-
-  if (direction === 'up') {
-    if (currentValue >= maxValue) {
-      setStatus(`${LABELS[index]} is already at its generated max.`);
-      return;
-    }
-
-    if (otherUnlocked.length === 0) {
-      setStatus('No unlocked stats available to lower.');
-      return;
-    }
-
-    const roomUp = round1(maxValue - currentValue);
-    const amount = Math.min(STEP, roomUp);
-    const redistributed = redistribute(otherUnlocked, amount, 'decrease');
-
-    if (redistributed <= 0) {
-      setStatus('The other unlocked stats cannot go any lower.');
-      return;
-    }
-
-    currentAbility.stats[index] = round1(currentAbility.stats[index] + redistributed);
-    setStatus(`${LABELS[index]} increased.`);
-  } else {
-    if (currentValue <= 0) {
+  if (direction === 'down') {
+    if (currentAbility.stats[index] <= 0) {
       setStatus(`${LABELS[index]} is already at 0.`);
       return;
     }
 
-    if (otherUnlocked.length === 0) {
-      setStatus('No unlocked stats available to increase.');
-      return;
-    }
-
-    const roomDown = round1(currentValue);
-    const amount = Math.min(STEP, roomDown);
-    const redistributed = redistribute(otherUnlocked, amount, 'increase');
-
-    if (redistributed <= 0) {
-      setStatus('The other unlocked stats are already at their generated max values.');
-      return;
-    }
-
-    currentAbility.stats[index] = round1(currentAbility.stats[index] - redistributed);
-    setStatus(`${LABELS[index]} decreased.`);
+    currentAbility.stats[index] = round1(Math.max(0, currentAbility.stats[index] - STEP));
+    updateDisplay(currentAbility);
+    setStatus(`${LABELS[index]} decreased. You now have more available points.`);
+    return;
   }
 
+  const available = updateAvailablePoints();
+
+  if (available < STEP) {
+    setStatus('No available points left. Lower another stat first.');
+    return;
+  }
+
+  if (currentAbility.stats[index] >= generatedMaxStats[index]) {
+    setStatus(`${LABELS[index]} is already at its generated max.`);
+    return;
+  }
+
+  const add = Math.min(STEP, available, generatedMaxStats[index] - currentAbility.stats[index]);
+  currentAbility.stats[index] = round1(currentAbility.stats[index] + add);
+
   updateDisplay(currentAbility);
+  setStatus(`${LABELS[index]} increased.`);
 }
 
 document.getElementById('generateBtn').addEventListener('click', runGeneration);
@@ -451,10 +369,6 @@ document.querySelectorAll('.stat-row').forEach(row => {
   const index = Number(row.dataset.stat);
   row.querySelector('.minus').addEventListener('click', () => adjustStat(index, 'down'));
   row.querySelector('.plus').addEventListener('click', () => adjustStat(index, 'up'));
-});
-
-[0, 1, 2, 3, 4].forEach(i => {
-  document.getElementById(`lock${i}`).addEventListener('click', () => toggleLock(i));
 });
 
 document.getElementById('imgInput').addEventListener('change', (e) => {
@@ -565,7 +479,7 @@ window.addEventListener('load', () => {
   };
 
   generatedMaxStats = [0, 0, 0, 0, 0];
-  resetLocks();
+  generatedTotal = 0;
   currentColor = DEFAULT_COLOR;
   hasGenerated = false;
 
@@ -573,5 +487,5 @@ window.addEventListener('load', () => {
   document.getElementById('generateBtn').textContent = 'Generate Ability';
 
   updateDisplay(currentAbility);
-  setStatus('Generate an ability, then use + / − and Lock to rebalance the stats.');
+  setStatus('Generate an ability, then lower and raise stats manually without going above the generated total.');
 });
