@@ -467,7 +467,6 @@ function applyLevelUp() {
 
   if (extraTotal > 0) {
     const statCap = getStatCap(newLevel);
-
     let weights = currentAbility.stats.map(v => Math.max(0.6, Math.pow(Math.max(v, 1), 1.35) * rand(0.85, 1.15)));
     let loops = 0;
 
@@ -475,7 +474,7 @@ function applyLevelUp() {
       const availableIndices = [0, 1, 2, 3, 4].filter(i => currentAbility.stats[i] < statCap);
       if (availableIndices.length === 0) break;
 
-      let weightedPool = availableIndices.map(i => ({ i, w: weights[i] }));
+      const weightedPool = availableIndices.map(i => ({ i, w: weights[i] }));
       const totalW = weightedPool.reduce((acc, item) => acc + item.w, 0);
       let roll = Math.random() * totalW;
 
