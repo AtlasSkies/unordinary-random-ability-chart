@@ -1,8 +1,11 @@
 const DEFAULT_COLOR = '#92dfec';
 const FILL_ALPHA = 0.65;
 const LABELS = ['Power', 'Speed', 'Trick', 'Recovery', 'Defense'];
+const STEP = 0.1;
 
 let currentAbility = null;
+let generatedMaxStats = [0, 0, 0, 0, 0];
+let lockedStats = [false, false, false, false, false];
 let currentColor = DEFAULT_COLOR;
 let overlayChart = null;
 let hasGenerated = false;
@@ -12,16 +15,26 @@ function hexToRGBA(hex, alpha) {
   if (hex.startsWith('rgb')) {
     return hex.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
   }
-
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+function round1(value) {
+  return Math.round(value * 10) / 10;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function sum(arr) {
+  return arr.reduce((a, b) => a + b, 0);
+}
+
 const radarBackgroundPlugin = {
   id: 'customPentagonBackground',
-
   beforeDatasetsDraw(chart) {
     const opts = chart.config.options.customBackground;
     if (!opts?.enabled) return;
@@ -41,7 +54,6 @@ const radarBackgroundPlugin = {
 
     ctx.save();
     ctx.beginPath();
-
     for (let i = 0; i < count; i++) {
       const angle = start + (i * 2 * Math.PI / count);
       const x = cx + radius * Math.cos(angle);
@@ -49,13 +61,11 @@ const radarBackgroundPlugin = {
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
-
     ctx.closePath();
     ctx.fillStyle = gradient;
     ctx.fill();
     ctx.restore();
   },
-
   afterDatasetsDraw(chart) {
     const opts = chart.config.options.customBackground;
     if (!opts?.enabled) return;
@@ -69,7 +79,6 @@ const radarBackgroundPlugin = {
     const start = -Math.PI / 2;
 
     ctx.save();
-
     ctx.beginPath();
     for (let i = 0; i < count; i++) {
       const angle = start + (i * 2 * Math.PI / count);
@@ -94,14 +103,12 @@ const radarBackgroundPlugin = {
     ctx.strokeStyle = '#184046';
     ctx.lineWidth = 3;
     ctx.stroke();
-
     ctx.restore();
   }
 };
 
 const axisTitlesPlugin = {
   id: 'axisTitles',
-
   afterDraw(chart) {
     const ctx = chart.ctx;
     const r = chart.scales.r;
@@ -185,14 +192,6 @@ function rand(min, max) {
   return Math.random() * (max - min) + min;
 }
 
-function round1(value) {
-  return Math.round(value * 10) / 10;
-}
-
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
-
 function weightedLevelRoll() {
   const roll = Math.random() * 100;
 
@@ -201,11 +200,7 @@ function weightedLevelRoll() {
   if (roll < 98) return round1(rand(3.5, 4.9));
 
   const highRoll = Math.random();
-
-  if (highRoll < 0.99999) {
-    return round1(rand(5.0, 5.9));
-  }
-
+  if (highRoll < 0.99999) return round1(rand(5.0, 5.9));
   return round1(rand(6.0, 10.0));
 }
 
@@ -219,12 +214,7 @@ function getBudgetRange(level) {
 }
 
 function getStatCap(level) {
-  if (level < 2.0) return 4.0;
-  if (level < 3.5) return 6.0;
-  if (level < 5.0) return 8.0;
-  if (level < 6.5) return 9.9;
-  if (level < 8.0) return 10.8;
-  return 12.0;
+  return level < 6.5 ? 9.9 : 10.0;
 }
 
 function buildStatsFromLevel(level) {
@@ -233,19 +223,19 @@ function buildStatsFromLevel(level) {
   const totalBudget = rand(budgetMin, budgetMax);
 
   let weights = Array.from({ length: 5 }, () => rand(0.4, 1.7));
-  const weightSum = weights.reduce((a, b) => a + b, 0);
+  const weightSum = sum(weights);
 
   let stats = weights.map(w => (w / weightSum) * totalBudget);
   stats = stats.map(v => clamp(v + rand(-0.45, 0.45), 0.8, statCap));
 
-  let currentSum = stats.reduce((a, b) => a + b, 0);
+  let currentSum = sum(stats);
   let loops = 0;
 
   while (currentSum > totalBudget && loops < 400) {
     const i = Math.floor(Math.random() * 5);
     if (stats[i] > 0.8) {
       stats[i] = Math.max(0.8, stats[i] - 0.1);
-      currentSum = stats.reduce((a, b) => a + b, 0);
+      currentSum = sum(stats);
     }
     loops++;
   }
@@ -256,16 +246,12 @@ function buildStatsFromLevel(level) {
     if (stats[i] < statCap) {
       const add = Math.min(0.1, totalBudget - currentSum, statCap - stats[i]);
       stats[i] += add;
-      currentSum = stats.reduce((a, b) => a + b, 0);
+      currentSum = sum(stats);
     }
     loops++;
   }
 
   stats = stats.map(round1);
-
-  if (level < 6.5) {
-    stats = stats.map(v => Math.min(v, 9.9));
-  }
 
   return {
     level,
@@ -279,9 +265,16 @@ function generateAbility() {
   return buildStatsFromLevel(level);
 }
 
+function updateLockButtons() {
+  lockedStats.forEach((locked, i) => {
+    const btn = document.getElementById(`lock${i}`);
+    btn.textContent = locked ? 'Locked' : 'Lock';
+    btn.classList.toggle('locked', locked);
+  });
+}
+
 function updateMainChart() {
   if (!currentAbility) return;
-
   mainChart.data.datasets[0].data = currentAbility.stats;
   mainChart.data.datasets[0].backgroundColor = hexToRGBA(currentColor, FILL_ALPHA);
   mainChart.data.datasets[0].borderColor = currentColor;
@@ -296,18 +289,149 @@ function updateDisplay(ability) {
   document.getElementById('trickDisplay').textContent = ability.stats[2].toFixed(1);
   document.getElementById('recoveryDisplay').textContent = ability.stats[3].toFixed(1);
   document.getElementById('defenseDisplay').textContent = ability.stats[4].toFixed(1);
-
+  updateLockButtons();
   updateMainChart();
+}
+
+function setStatus(message) {
+  document.getElementById('statusNote').textContent = message;
+}
+
+function resetLocks() {
+  lockedStats = [false, false, false, false, false];
 }
 
 function runGeneration() {
   currentAbility = generateAbility();
+  generatedMaxStats = [...currentAbility.stats];
+  resetLocks();
   updateDisplay(currentAbility);
+  setStatus('Generated max values saved. You can lower stats and raise them back up to those max values.');
 
   if (!hasGenerated) {
     hasGenerated = true;
     document.getElementById('generateBtn').textContent = 'Regenerate Ability';
   }
+}
+
+function toggleLock(index) {
+  if (!hasGenerated) return;
+  lockedStats[index] = !lockedStats[index];
+  updateLockButtons();
+}
+
+function redistribute(indices, amount, mode) {
+  let remaining = round1(amount);
+
+  while (remaining > 0.0001) {
+    const eligible = indices.filter(i => {
+      const value = currentAbility.stats[i];
+      const maxValue = generatedMaxStats[i];
+
+      if (mode === 'decrease') {
+        return value > 0;
+      }
+      return value < maxValue;
+    });
+
+    if (eligible.length === 0) break;
+
+    let movedSomething = false;
+
+    for (const i of eligible) {
+      if (remaining <= 0.0001) break;
+
+      const value = currentAbility.stats[i];
+      const maxValue = generatedMaxStats[i];
+      let possible = 0;
+
+      if (mode === 'decrease') {
+        possible = round1(value);
+      } else {
+        possible = round1(maxValue - value);
+      }
+
+      const move = Math.min(STEP, possible, remaining);
+      if (move <= 0) continue;
+
+      if (mode === 'decrease') {
+        currentAbility.stats[i] = round1(value - move);
+      } else {
+        currentAbility.stats[i] = round1(value + move);
+      }
+
+      remaining = round1(remaining - move);
+      movedSomething = true;
+    }
+
+    if (!movedSomething) break;
+  }
+
+  return round1(amount - remaining);
+}
+
+function adjustStat(index, direction) {
+  if (!hasGenerated || !currentAbility) {
+    setStatus('Generate an ability first.');
+    return;
+  }
+
+  if (lockedStats[index]) {
+    setStatus(`${LABELS[index]} is locked.`);
+    return;
+  }
+
+  const currentValue = currentAbility.stats[index];
+  const maxValue = generatedMaxStats[index];
+  const otherUnlocked = [0, 1, 2, 3, 4].filter(i => i !== index && !lockedStats[i]);
+
+  if (direction === 'up') {
+    if (currentValue >= maxValue) {
+      setStatus(`${LABELS[index]} is already at its generated max.`);
+      return;
+    }
+
+    if (otherUnlocked.length === 0) {
+      setStatus('No unlocked stats available to lower.');
+      return;
+    }
+
+    const roomUp = round1(maxValue - currentValue);
+    const amount = Math.min(STEP, roomUp);
+    const redistributed = redistribute(otherUnlocked, amount, 'decrease');
+
+    if (redistributed <= 0) {
+      setStatus('The other unlocked stats cannot go any lower.');
+      return;
+    }
+
+    currentAbility.stats[index] = round1(currentAbility.stats[index] + redistributed);
+    setStatus(`${LABELS[index]} increased.`);
+  } else {
+    if (currentValue <= 0) {
+      setStatus(`${LABELS[index]} is already at 0.`);
+      return;
+    }
+
+    if (otherUnlocked.length === 0) {
+      setStatus('No unlocked stats available to increase.');
+      return;
+    }
+
+    const roomDown = round1(currentValue);
+    const amount = Math.min(STEP, roomDown);
+    const redistributed = redistribute(otherUnlocked, amount, 'increase');
+
+    if (redistributed <= 0) {
+      setStatus('The other unlocked stats are already at their generated max values.');
+      return;
+    }
+
+    currentAbility.stats[index] = round1(currentAbility.stats[index] - redistributed);
+    setStatus(`${LABELS[index]} decreased.`);
+  }
+
+  updateDisplay(currentAbility);
 }
 
 document.getElementById('generateBtn').addEventListener('click', runGeneration);
@@ -321,6 +445,16 @@ document.getElementById('colorPicker').addEventListener('input', (e) => {
     overlayChart.data.datasets[0].borderColor = currentColor;
     overlayChart.update();
   }
+});
+
+document.querySelectorAll('.stat-row').forEach(row => {
+  const index = Number(row.dataset.stat);
+  row.querySelector('.minus').addEventListener('click', () => adjustStat(index, 'down'));
+  row.querySelector('.plus').addEventListener('click', () => adjustStat(index, 'up'));
+});
+
+[0, 1, 2, 3, 4].forEach(i => {
+  document.getElementById(`lock${i}`).addEventListener('click', () => toggleLock(i));
 });
 
 document.getElementById('imgInput').addEventListener('change', (e) => {
@@ -430,6 +564,8 @@ window.addEventListener('load', () => {
     stats: [0, 0, 0, 0, 0]
   };
 
+  generatedMaxStats = [0, 0, 0, 0, 0];
+  resetLocks();
   currentColor = DEFAULT_COLOR;
   hasGenerated = false;
 
@@ -437,4 +573,5 @@ window.addEventListener('load', () => {
   document.getElementById('generateBtn').textContent = 'Generate Ability';
 
   updateDisplay(currentAbility);
+  setStatus('Generate an ability, then use + / − and Lock to rebalance the stats.');
 });
