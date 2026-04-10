@@ -33,8 +33,12 @@
   font-display: swap;
 }
 
+:root {
+  --font-stack: 'Carlito', 'Aptos', 'Segoe UI', 'Trebuchet MS', 'Gill Sans', 'Avenir Next', Avenir, Optima, Arial, Helvetica, sans-serif;
+}
+
 body {
-  font-family: 'Carlito', Optima, Avenir, "Avenir Next", "Gill Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: var(--font-stack);
   background: #f0f8fc;
   margin: 0;
   padding: 24px;
@@ -47,7 +51,7 @@ body {
   justify-content: center;
   align-items: flex-start;
   gap: 32px;
-  max-width: 1250px;
+  max-width: 1180px;
   width: 100%;
   margin: 0 auto;
 }
@@ -66,8 +70,8 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  width: 560px;
-  flex: 0 0 560px;
+  width: 504px;
+  flex: 0 0 504px;
 }
 
 .title-block {
@@ -82,6 +86,7 @@ h1 {
   color: #333;
   margin: 0;
   font-weight: 700;
+  font-family: var(--font-stack);
 }
 
 .subtitle {
@@ -91,11 +96,12 @@ h1 {
   margin-top: 4px;
   text-align: center;
   font-weight: 400;
+  font-family: var(--font-stack);
 }
 
 .upload-img {
-  width: 250px;
-  height: 250px;
+  width: 225px;
+  height: 225px;
   border: 2px dashed #aaa;
   border-radius: 10px;
   object-fit: cover;
@@ -121,9 +127,14 @@ h1 {
   font-size: 15px;
   gap: 10px;
   font-weight: 400;
+  font-family: var(--font-stack);
 }
 
 .info-box label b {
+  font-weight: 700;
+}
+
+.level-value {
   font-weight: 700;
 }
 
@@ -176,13 +187,13 @@ input[type="text"] {
   border-radius: 4px;
   border: 1px solid #ccc;
   padding: 4px 6px;
-  font-family: 'Carlito', sans-serif;
+  font-family: var(--font-stack);
   font-weight: 400;
 }
 
 input[type="file"] {
   max-width: 100%;
-  font-family: 'Carlito', sans-serif;
+  font-family: var(--font-stack);
 }
 
 input[type="color"] {
@@ -197,7 +208,7 @@ input[type="color"] {
 button {
   margin-top: 4px;
   padding: 8px 14px;
-  font-family: 'Carlito', sans-serif;
+  font-family: var(--font-stack);
   font-weight: 400;
   background-color: #92dfec;
   border: none;
@@ -219,8 +230,8 @@ button:hover {
 }
 
 .chart-area {
-  width: 560px;
-  height: 560px;
+  width: 504px;
+  height: 504px;
   background: white;
   border-radius: 16px;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
@@ -243,6 +254,7 @@ button:hover {
   font-style: italic;
   margin-bottom: 10px;
   text-align: center;
+  font-family: var(--font-stack);
 }
 
 .rate-row {
@@ -252,6 +264,7 @@ button:hover {
   padding: 8px 0;
   border-bottom: 1px solid #e8eef2;
   font-size: 15px;
+  font-family: var(--font-stack);
 }
 
 .rate-row:last-child {
@@ -338,6 +351,7 @@ button:hover {
   user-select: none;
   pointer-events: none;
   letter-spacing: 1px;
+  font-family: var(--font-stack);
 }
 
 .text-box {
@@ -350,6 +364,7 @@ button:hover {
   text-align: center;
   line-height: 1.5;
   font-weight: 400;
+  font-family: var(--font-stack);
 }
 
 .text-box b {
@@ -380,7 +395,7 @@ button:hover {
   .chart-area {
     flex: unset;
     width: 100%;
-    max-width: 560px;
+    max-width: 504px;
   }
 
   .right {
@@ -388,7 +403,7 @@ button:hover {
   }
 
   .chart-area {
-    height: 560px;
+    height: 504px;
   }
 
   .character-box {
