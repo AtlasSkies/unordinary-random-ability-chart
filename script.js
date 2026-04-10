@@ -116,7 +116,7 @@ const axisTitlesPlugin = {
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = 'italic 18px Optima';
+    ctx.font = 'italic 18px Carlito';
     ctx.strokeStyle = currentColor;
     ctx.fillStyle = 'white';
     ctx.lineWidth = 4;
