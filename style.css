@@ -176,10 +176,6 @@ input[type="color"] {
   border-bottom: 1px solid #e8eef2;
 }
 
-.stat-row:last-of-type {
-  border-bottom: 1px solid #e8eef2;
-}
-
 .stat-name {
   font-weight: 700;
   font-style: italic;
@@ -358,4 +354,98 @@ button:hover,
 }
 
 .overlay-img-wrap {
-  position: relative
+  position: relative;
+  display: inline-block;
+}
+
+.overlay-img {
+  width: 300px;
+  height: 300px;
+  object-fit: cover;
+  border: 3px solid #493e3b;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.img-watermark {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.05);
+  user-select: none;
+  pointer-events: none;
+  letter-spacing: 1px;
+}
+
+.text-box {
+  position: absolute;
+  bottom: -65px;
+  width: 86%;
+  background: white;
+  border: 3px solid #493e3b;
+  padding: 10px;
+  text-align: center;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.text-box b {
+  font-weight: 700;
+}
+
+.overlay-chart {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: clamp(235px, 33vw, 390px);
+  height: clamp(235px, 33vw, 390px);
+}
+
+#downloadBtn {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+}
+
+@media (max-width: 980px) {
+  .container {
+    flex-wrap: wrap;
+  }
+
+  .left,
+  .right,
+  .chart-area {
+    flex: unset;
+    width: 100%;
+    max-width: 428px;
+  }
+
+  .chart-area {
+    height: 428px;
+  }
+
+  .character-box {
+    flex-direction: column;
+    width: 92vw;
+    min-width: unset;
+    max-height: 92vh;
+    min-height: unset;
+    padding: 18px;
+    gap: 24px;
+    overflow-y: auto;
+  }
+
+  .overlay-img {
+    width: 70vw;
+    height: auto;
+    max-height: 35vh;
+  }
+
+  .text-box {
+    position: static;
+    margin-top: 12px;
+    width: 80%;
+  }
+}
