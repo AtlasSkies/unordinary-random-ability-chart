@@ -1,15 +1,17 @@
-const BASE_COLOR = '#92dfec';
+const DEFAULT_COLOR = '#92dfec';
 const FILL_ALPHA = 0.65;
 const LABELS = ['Power', 'Speed', 'Trick', 'Recovery', 'Defense'];
 
 let currentAbility = null;
+let currentColor = DEFAULT_COLOR;
 let overlayChart = null;
 
 function hexToRGBA(hex, alpha) {
-  if (!hex) hex = BASE_COLOR;
+  if (!hex) hex = DEFAULT_COLOR;
   if (hex.startsWith('rgb')) {
     return hex.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
   }
+
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
@@ -18,6 +20,7 @@ function hexToRGBA(hex, alpha) {
 
 const radarBackgroundPlugin = {
   id: 'customPentagonBackground',
+
   beforeDatasetsDraw(chart) {
     const opts = chart.config.options.customBackground;
     if (!opts?.enabled) return;
@@ -32,17 +35,20 @@ const radarBackgroundPlugin = {
 
     const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
     gradient.addColorStop(0, '#f8fcff');
-    gradient.addColorStop(0.33, BASE_COLOR);
-    gradient.addColorStop(1, BASE_COLOR);
+    gradient.addColorStop(0.33, DEFAULT_COLOR);
+    gradient.addColorStop(1, DEFAULT_COLOR);
 
     ctx.save();
     ctx.beginPath();
+
     for (let i = 0; i < N; i++) {
       const a = start + (i * 2 * Math.PI / N);
       const x = cx + radius * Math.cos(a);
       const y = cy + radius * Math.sin(a);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     }
+
     ctx.closePath();
     ctx.fillStyle = gradient;
     ctx.fill();
@@ -80,7 +86,8 @@ const radarBackgroundPlugin = {
       const a = start + (i * 2 * Math.PI / N);
       const x = cx + radius * Math.cos(a);
       const y = cy + radius * Math.sin(a);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     }
     ctx.closePath();
     ctx.strokeStyle = '#184046';
@@ -93,6 +100,7 @@ const radarBackgroundPlugin = {
 
 const axisTitlesPlugin = {
   id: 'axisTitles',
+
   afterDraw(chart) {
     const ctx = chart.ctx;
     const r = chart.scales.r;
@@ -108,7 +116,7 @@ const axisTitlesPlugin = {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.font = 'italic 18px Optima';
-    ctx.strokeStyle = BASE_COLOR;
+    ctx.strokeStyle = currentColor;
     ctx.fillStyle = 'white';
     ctx.lineWidth = 4;
 
@@ -118,7 +126,9 @@ const axisTitlesPlugin = {
       let y = cy + baseRadius * Math.sin(a);
 
       if (i === 0) y -= 5;
-      if (chart.canvas.id === 'overlayChartCanvas' && (i === 1 || i === 4)) y -= 25;
+      if (chart.canvas.id === 'overlayChartCanvas' && (i === 1 || i === 4)) {
+        y -= 25;
+      }
 
       ctx.strokeText(label, x, y);
       ctx.fillText(label, x, y);
@@ -137,11 +147,11 @@ function createRadar(canvasId, withBackground) {
       labels: LABELS,
       datasets: [{
         data: [0, 0, 0, 0, 0],
-        backgroundColor: hexToRGBA(BASE_COLOR, FILL_ALPHA),
-        borderColor: BASE_COLOR,
+        backgroundColor: hexToRGBA(currentColor, FILL_ALPHA),
+        borderColor: currentColor,
         borderWidth: 2,
         pointBackgroundColor: '#fff',
-        pointBorderColor: BASE_COLOR,
+        pointBorderColor: currentColor,
         pointRadius: canvasId === 'mainChart' ? 4 : 0
       }]
     },
@@ -266,6 +276,16 @@ function generateAbility() {
   return buildStatsFromLevel(level);
 }
 
+function updateMainChart() {
+  if (!currentAbility) return;
+
+  mainChart.data.datasets[0].data = currentAbility.stats;
+  mainChart.data.datasets[0].backgroundColor = hexToRGBA(currentColor, FILL_ALPHA);
+  mainChart.data.datasets[0].borderColor = currentColor;
+  mainChart.data.datasets[0].pointBorderColor = currentColor;
+  mainChart.update();
+}
+
 function updateDisplay(ability) {
   document.getElementById('levelDisplay').textContent = ability.level.toFixed(1);
   document.getElementById('powerDisplay').textContent = ability.stats[0].toFixed(1);
@@ -274,8 +294,7 @@ function updateDisplay(ability) {
   document.getElementById('recoveryDisplay').textContent = ability.stats[3].toFixed(1);
   document.getElementById('defenseDisplay').textContent = ability.stats[4].toFixed(1);
 
-  mainChart.data.datasets[0].data = ability.stats;
-  mainChart.update();
+  updateMainChart();
 }
 
 function rerollAbility() {
@@ -284,6 +303,17 @@ function rerollAbility() {
 }
 
 document.getElementById('rerollBtn').addEventListener('click', rerollAbility);
+
+document.getElementById('colorPicker').addEventListener('input', (e) => {
+  currentColor = e.target.value;
+  updateMainChart();
+
+  if (overlayChart && !document.getElementById('overlay').classList.contains('hidden')) {
+    overlayChart.data.datasets[0].backgroundColor = hexToRGBA(currentColor, FILL_ALPHA);
+    overlayChart.data.datasets[0].borderColor = currentColor;
+    overlayChart.update();
+  }
+});
 
 document.getElementById('imgInput').addEventListener('change', e => {
   const file = e.target.files[0];
@@ -297,7 +327,12 @@ document.getElementById('imgInput').addEventListener('change', e => {
 });
 
 document.getElementById('viewBtn').addEventListener('click', () => {
-  if (!currentAbility) rerollAbility();
+  if (!currentAbility) {
+    currentAbility = {
+      level: 0,
+      stats: [0, 0, 0, 0, 0]
+    };
+  }
 
   document.getElementById('overlay').classList.remove('hidden');
   document.getElementById('overlayImg').src = document.getElementById('uploadedImg').src;
@@ -317,8 +352,8 @@ document.getElementById('viewBtn').addEventListener('click', () => {
       labels: LABELS,
       datasets: [{
         data: currentAbility.stats.map(v => Math.min(v, 10)),
-        backgroundColor: hexToRGBA(BASE_COLOR, FILL_ALPHA),
-        borderColor: BASE_COLOR,
+        backgroundColor: hexToRGBA(currentColor, FILL_ALPHA),
+        borderColor: currentColor,
         borderWidth: 2,
         pointRadius: 0
       }]
@@ -374,4 +409,13 @@ document.getElementById('downloadBtn').addEventListener('click', async () => {
   closeBtn.style.visibility = 'visible';
 });
 
-window.addEventListener('load', rerollAbility);
+window.addEventListener('load', () => {
+  currentAbility = {
+    level: 0,
+    stats: [0, 0, 0, 0, 0]
+  };
+
+  currentColor = DEFAULT_COLOR;
+  document.getElementById('colorPicker').value = DEFAULT_COLOR;
+  updateDisplay(currentAbility);
+});
