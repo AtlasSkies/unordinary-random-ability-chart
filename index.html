@@ -22,13 +22,14 @@
       <div class="info-box">
         <label><b>Name:</b> <input type="text" id="nameInput" /></label>
         <label><b>Ability:</b> <input type="text" id="abilityInput" /></label>
+        <label><b>Level:</b> <span id="levelDisplay">0.0</span></label>
+        <label><b>Ability Color:</b> <input type="color" id="colorPicker" value="#92dfec" /></label>
 
-        <div class="generated-row"><span>Level</span><span id="levelDisplay">-</span></div>
-        <div class="generated-row"><span>Power</span><span id="powerDisplay">-</span></div>
-        <div class="generated-row"><span>Speed</span><span id="speedDisplay">-</span></div>
-        <div class="generated-row"><span>Trick</span><span id="trickDisplay">-</span></div>
-        <div class="generated-row"><span>Recovery</span><span id="recoveryDisplay">-</span></div>
-        <div class="generated-row"><span>Defense</span><span id="defenseDisplay">-</span></div>
+        <div class="generated-row"><span>Power</span><span id="powerDisplay">0.0</span></div>
+        <div class="generated-row"><span>Speed</span><span id="speedDisplay">0.0</span></div>
+        <div class="generated-row"><span>Trick</span><span id="trickDisplay">0.0</span></div>
+        <div class="generated-row"><span>Recovery</span><span id="recoveryDisplay">0.0</span></div>
+        <div class="generated-row"><span>Defense</span><span id="defenseDisplay">0.0</span></div>
       </div>
 
       <div class="controls">
@@ -61,7 +62,7 @@
         <div class="text-box">
           <b>Name:</b> <span id="overlayName">-</span><br />
           <b>Ability:</b> <span id="overlayAbility">-</span><br />
-          <b>Level:</b> <span id="overlayLevel">-</span>
+          <b>Level:</b> <span id="overlayLevel">0.0</span>
         </div>
       </div>
 
