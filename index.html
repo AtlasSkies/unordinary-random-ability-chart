@@ -25,11 +25,59 @@
         <label><b>Level:</b> <span id="levelDisplay" class="level-value">0.0</span></label>
         <label><b>Ability Color:</b> <input type="color" id="colorPicker" value="#92dfec" /></label>
 
-        <div class="generated-row"><span>Power</span><span id="powerDisplay">0.0</span></div>
-        <div class="generated-row"><span>Speed</span><span id="speedDisplay">0.0</span></div>
-        <div class="generated-row"><span>Trick</span><span id="trickDisplay">0.0</span></div>
-        <div class="generated-row"><span>Recovery</span><span id="recoveryDisplay">0.0</span></div>
-        <div class="generated-row"><span>Defense</span><span id="defenseDisplay">0.0</span></div>
+        <div class="stat-row" data-stat="0">
+          <span class="stat-name">Power</span>
+          <div class="stat-controls">
+            <button class="adjust-btn minus" type="button">−</button>
+            <span id="powerDisplay" class="stat-value">0.0</span>
+            <button class="adjust-btn plus" type="button">+</button>
+            <button class="lock-btn" id="lock0" type="button">Lock</button>
+          </div>
+        </div>
+
+        <div class="stat-row" data-stat="1">
+          <span class="stat-name">Speed</span>
+          <div class="stat-controls">
+            <button class="adjust-btn minus" type="button">−</button>
+            <span id="speedDisplay" class="stat-value">0.0</span>
+            <button class="adjust-btn plus" type="button">+</button>
+            <button class="lock-btn" id="lock1" type="button">Lock</button>
+          </div>
+        </div>
+
+        <div class="stat-row" data-stat="2">
+          <span class="stat-name">Trick</span>
+          <div class="stat-controls">
+            <button class="adjust-btn minus" type="button">−</button>
+            <span id="trickDisplay" class="stat-value">0.0</span>
+            <button class="adjust-btn plus" type="button">+</button>
+            <button class="lock-btn" id="lock2" type="button">Lock</button>
+          </div>
+        </div>
+
+        <div class="stat-row" data-stat="3">
+          <span class="stat-name">Recovery</span>
+          <div class="stat-controls">
+            <button class="adjust-btn minus" type="button">−</button>
+            <span id="recoveryDisplay" class="stat-value">0.0</span>
+            <button class="adjust-btn plus" type="button">+</button>
+            <button class="lock-btn" id="lock3" type="button">Lock</button>
+          </div>
+        </div>
+
+        <div class="stat-row" data-stat="4">
+          <span class="stat-name">Defense</span>
+          <div class="stat-controls">
+            <button class="adjust-btn minus" type="button">−</button>
+            <span id="defenseDisplay" class="stat-value">0.0</span>
+            <button class="adjust-btn plus" type="button">+</button>
+            <button class="lock-btn" id="lock4" type="button">Lock</button>
+          </div>
+        </div>
+
+        <div class="status-note" id="statusNote">
+          Generate an ability, then use + / − and Lock to rebalance the stats.
+        </div>
       </div>
     </div>
 
@@ -40,8 +88,8 @@
 
       <div class="controls">
         <div class="button-row">
-          <button id="generateBtn">Generate Ability</button>
-          <button id="viewBtn">View Character Chart</button>
+          <button id="generateBtn" type="button">Generate Ability</button>
+          <button id="viewBtn" type="button">View Character Chart</button>
         </div>
       </div>
 
@@ -58,7 +106,7 @@
 
   <div id="overlay" class="overlay hidden">
     <div id="characterBox" class="character-box">
-      <button id="closeBtn" class="close-btn">×</button>
+      <button id="closeBtn" class="close-btn" type="button">×</button>
 
       <div class="image-section">
         <div class="overlay-img-wrap">
@@ -76,7 +124,7 @@
         <canvas id="overlayChartCanvas"></canvas>
       </div>
 
-      <button id="downloadBtn">Download Character Chart</button>
+      <button id="downloadBtn" type="button">Download Character Chart</button>
     </div>
   </div>
 
