@@ -4,7 +4,6 @@ const LABELS = ['Power', 'Speed', 'Trick', 'Recovery', 'Defense'];
 const STEP = 0.1;
 
 let currentAbility = null;
-let generatedMaxStats = [0, 0, 0, 0, 0];
 let generatedTotal = 0;
 let currentColor = DEFAULT_COLOR;
 let overlayChart = null;
@@ -214,7 +213,7 @@ function getBudgetRange(level) {
 }
 
 function getStatCap(level) {
-  return level < 6.5 ? 9.9 : 10.0;
+  return level < 6.5 ? 9.9 : 20.0;
 }
 
 function buildStatsFromLevel(level) {
@@ -222,42 +221,39 @@ function buildStatsFromLevel(level) {
   const statCap = getStatCap(level);
   const targetTotal = round1(rand(budgetMin, budgetMax));
 
-  let baseWeights = Array.from({ length: 5 }, () => rand(0.6, 1.8));
-  const baseSum = baseWeights.reduce((a, b) => a + b, 0);
+  let weights = Array.from({ length: 5 }, () => rand(0.6, 1.8));
+  const weightSum = weights.reduce((a, b) => a + b, 0);
 
-  let maxStats = baseWeights.map(w => (w / baseSum) * targetTotal);
-  maxStats = maxStats.map(v => clamp(v + rand(-0.7, 0.7), 0.6, statCap));
+  let stats = weights.map(w => (w / weightSum) * targetTotal);
+  stats = stats.map(v => clamp(v + rand(-0.7, 0.7), 0.6, statCap));
 
-  let currentSum = sum(maxStats);
+  let currentSum = sum(stats);
   let loops = 0;
 
-  while (currentSum > targetTotal && loops < 600) {
+  while (currentSum > targetTotal && loops < 700) {
     const i = Math.floor(Math.random() * 5);
-    if (maxStats[i] > 0.6) {
-      maxStats[i] = round1(Math.max(0.6, maxStats[i] - 0.1));
-      currentSum = sum(maxStats);
+    if (stats[i] > 0.6) {
+      stats[i] = round1(Math.max(0.6, stats[i] - 0.1));
+      currentSum = sum(stats);
     }
     loops++;
   }
 
   loops = 0;
-  while (currentSum < targetTotal && loops < 600) {
+  while (currentSum < targetTotal && loops < 700) {
     const i = Math.floor(Math.random() * 5);
-    if (maxStats[i] < statCap) {
-      const add = Math.min(0.1, statCap - maxStats[i], targetTotal - currentSum);
-      maxStats[i] = round1(maxStats[i] + add);
-      currentSum = sum(maxStats);
+    if (stats[i] < statCap) {
+      const add = Math.min(0.1, statCap - stats[i], targetTotal - currentSum);
+      stats[i] = round1(stats[i] + add);
+      currentSum = sum(stats);
     }
     loops++;
   }
 
-  maxStats = maxStats.map(v => round1(v));
-
   return {
     level,
-    stats: [...maxStats],
-    maxStats: [...maxStats],
-    total: sum(maxStats)
+    stats: stats.map(v => round1(v)),
+    total: sum(stats)
   };
 }
 
@@ -270,12 +266,18 @@ function getAvailablePoints() {
   return round1(generatedTotal - sum(currentAbility.stats));
 }
 
+function getMainChartMax() {
+  const largest = Math.max(...currentAbility.stats, 10);
+  return Math.ceil(largest);
+}
+
 function updateMainChart() {
   if (!currentAbility) return;
   mainChart.data.datasets[0].data = currentAbility.stats;
   mainChart.data.datasets[0].backgroundColor = hexToRGBA(currentColor, FILL_ALPHA);
   mainChart.data.datasets[0].borderColor = currentColor;
   mainChart.data.datasets[0].pointBorderColor = currentColor;
+  mainChart.options.scales.r.max = getMainChartMax();
   mainChart.update();
 }
 
@@ -295,7 +297,6 @@ function runGeneration() {
     level: rolled.level,
     stats: [...rolled.stats]
   };
-  generatedMaxStats = [...rolled.maxStats];
   generatedTotal = rolled.total;
 
   updateDisplay(currentAbility);
@@ -309,6 +310,8 @@ function runGeneration() {
 function adjustStat(index, direction) {
   if (!hasGenerated || !currentAbility) return;
 
+  const statCap = getStatCap(currentAbility.level);
+
   if (direction === 'down') {
     if (currentAbility.stats[index] <= 0) return;
     currentAbility.stats[index] = round1(Math.max(0, currentAbility.stats[index] - STEP));
@@ -318,9 +321,9 @@ function adjustStat(index, direction) {
 
   const available = getAvailablePoints();
   if (available < STEP) return;
-  if (currentAbility.stats[index] >= generatedMaxStats[index]) return;
+  if (currentAbility.stats[index] >= statCap) return;
 
-  const add = Math.min(STEP, available, generatedMaxStats[index] - currentAbility.stats[index]);
+  const add = Math.min(STEP, available, statCap - currentAbility.stats[index]);
   currentAbility.stats[index] = round1(currentAbility.stats[index] + add);
   updateDisplay(currentAbility);
 }
@@ -451,7 +454,6 @@ window.addEventListener('load', () => {
     stats: [0, 0, 0, 0, 0]
   };
 
-  generatedMaxStats = [0, 0, 0, 0, 0];
   generatedTotal = 0;
   currentColor = DEFAULT_COLOR;
   hasGenerated = false;
