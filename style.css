@@ -133,6 +133,14 @@ h1 {
   font-weight: 700;
 }
 
+.needle {
+  margin-left: 6px;
+}
+
+.hidden-inline {
+  display: none;
+}
+
 label {
   font-style: italic;
   font-size: 15px;
@@ -234,6 +242,10 @@ button:hover,
   gap: 10px;
   flex-wrap: wrap;
   justify-content: center;
+}
+
+.second-row {
+  margin-top: 2px;
 }
 
 .chart-area {
