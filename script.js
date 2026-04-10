@@ -3,14 +3,14 @@ const FILL_ALPHA = 0.65;
 const LABELS = ['Power', 'Speed', 'Trick', 'Recovery', 'Defense'];
 const STEP = 0.1;
 
-/*
-  Growth model:
-  - Level 1.0 = all five stats are exactly 1.0
-  - Above level 1, extra total power grows exponentially
-  - This is a model, not a canon formula
-*/
 const POWER_EXPONENT = 1.85;
 const POWER_MULTIPLIER = 1.15;
+
+// Bell curve settings
+const LEVEL_MEAN = 2.7;
+const LEVEL_STD_DEV = 1.15;
+const LEVEL_MIN = 1.0;
+const LEVEL_MAX = 10.0;
 
 let currentAbility = null;
 let generatedTotal = 0;
@@ -43,6 +43,76 @@ function sum(arr) {
 
 function rand(min, max) {
   return Math.random() * (max - min) + min;
+}
+
+function erf(x) {
+  const sign = x >= 0 ? 1 : -1;
+  x = Math.abs(x);
+
+  const a1 = 0.254829592;
+  const a2 = -0.284496736;
+  const a3 = 1.421413741;
+  const a4 = -1.453152027;
+  const a5 = 1.061405429;
+  const p = 0.3275911;
+
+  const t = 1 / (1 + p * x);
+  const y = 1 - (((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x));
+
+  return sign * y;
+}
+
+function normalCDF(x, mean, stdDev) {
+  return 0.5 * (1 + erf((x - mean) / (stdDev * Math.sqrt(2))));
+}
+
+function getSublevelProbabilities() {
+  const entries = [];
+
+  for (let level = 1.0; level <= 10.0001; level += 0.1) {
+    const center = round1(level);
+    const lower = center - 0.05;
+    const upper = center + 0.05;
+
+    const clippedLower = Math.max(lower, LEVEL_MIN - 0.05);
+    const clippedUpper = Math.min(upper, LEVEL_MAX + 0.05);
+
+    const probability =
+      normalCDF(clippedUpper, LEVEL_MEAN, LEVEL_STD_DEV) -
+      normalCDF(clippedLower, LEVEL_MEAN, LEVEL_STD_DEV);
+
+    entries.push({
+      level: center.toFixed(1),
+      chance: probability * 100
+    });
+  }
+
+  const total = entries.reduce((acc, item) => acc + item.chance, 0);
+
+  return entries.map(item => ({
+    level: item.level,
+    chance: (item.chance / total) * 100
+  }));
+}
+
+function formatChance(percent) {
+  if (percent >= 1) return `${percent.toFixed(2)}%`;
+  if (percent >= 0.1) return `${percent.toFixed(3)}%`;
+  if (percent >= 0.01) return `${percent.toFixed(4)}%`;
+  return `${percent.toFixed(6)}%`;
+}
+
+function renderIndividualStats() {
+  const grid = document.getElementById('individualStatsGrid');
+  if (!grid) return;
+
+  const items = getSublevelProbabilities();
+  grid.innerHTML = items.map(item => `
+    <div class="individual-stat-item">
+      <span>${item.level}</span>
+      <span>${formatChance(item.chance)}</span>
+    </div>
+  `).join('');
 }
 
 const radarBackgroundPlugin = {
@@ -201,16 +271,25 @@ function createRadar(canvasId, withBackground) {
 
 const mainChart = createRadar('mainChart', true);
 
+function randomNormal(mean, stdDev) {
+  let u = 0;
+  let v = 0;
+
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+
+  const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  return mean + z * stdDev;
+}
+
 function weightedLevelRoll() {
-  const roll = Math.random() * 100;
+  let level;
 
-  if (roll < 33) return round1(rand(1.0, 1.9));
-  if (roll < 86) return round1(rand(2.0, 3.4));
-  if (roll < 98) return round1(rand(3.5, 4.9));
+  do {
+    level = randomNormal(LEVEL_MEAN, LEVEL_STD_DEV);
+  } while (level < LEVEL_MIN || level > LEVEL_MAX);
 
-  const highRoll = Math.random();
-  if (highRoll < 0.99999) return round1(rand(5.0, 5.9));
-  return round1(rand(6.0, 10.0));
+  return round1(level);
 }
 
 function getStatCap(level) {
@@ -218,10 +297,7 @@ function getStatCap(level) {
 }
 
 function getTargetTotal(level) {
-  if (level <= 1) {
-    return 5.0;
-  }
-
+  if (level <= 1) return 5.0;
   const extra = POWER_MULTIPLIER * Math.pow(level - 1, POWER_EXPONENT);
   return round1(5 + extra);
 }
@@ -243,8 +319,6 @@ function buildStatsFromLevel(level) {
   const weightSum = weights.reduce((a, b) => a + b, 0);
 
   let stats = weights.map(w => (w / weightSum) * targetTotal);
-
-  // Base floor of 1, since level 1 means all basics are 1
   stats = stats.map(v => clamp(v + rand(-0.6, 0.6), 1.0, statCap));
 
   let currentSum = sum(stats);
@@ -441,6 +515,14 @@ document.getElementById('closeBtn').addEventListener('click', () => {
   document.getElementById('overlay').classList.add('hidden');
 });
 
+document.getElementById('helpBtn').addEventListener('click', () => {
+  document.getElementById('helpOverlay').classList.remove('hidden');
+});
+
+document.getElementById('helpCloseBtn').addEventListener('click', () => {
+  document.getElementById('helpOverlay').classList.add('hidden');
+});
+
 document.getElementById('downloadBtn').addEventListener('click', async () => {
   const box = document.getElementById('characterBox');
   const downloadBtn = document.getElementById('downloadBtn');
@@ -482,5 +564,6 @@ window.addEventListener('load', () => {
   document.getElementById('colorPicker').value = DEFAULT_COLOR;
   document.getElementById('generateBtn').textContent = 'Generate Ability';
 
+  renderIndividualStats();
   updateDisplay(currentAbility);
 });
