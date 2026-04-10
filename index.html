@@ -22,7 +22,13 @@
       <div class="info-box">
         <label><b>Name:</b> <input type="text" id="nameInput" /></label>
         <label><b>Ability:</b> <input type="text" id="abilityInput" /></label>
-        <label><b>Level:</b> <span id="levelDisplay" class="level-value">0.0</span><span id="levelNeedle" class="needle hidden-inline">💉</span></label>
+        <label>
+          <b>Level:</b>
+          <span>
+            <span id="levelDisplay" class="level-value">0.0</span>
+            <span id="levelNeedle" class="needle hidden-inline">💉</span>
+          </span>
+        </label>
         <label><b>Ability Color:</b> <input type="color" id="colorPicker" value="#92dfec" /></label>
 
         <div class="stat-row" data-stat="0">
@@ -83,6 +89,7 @@
           <button id="viewBtn" type="button">View Character Chart</button>
           <button id="helpBtn" type="button">How It Works</button>
         </div>
+
         <div class="button-row second-row">
           <button id="amplifierBtn" type="button">Take Ability Amplifier</button>
           <button id="levelUpBtn" type="button">Level Up</button>
@@ -112,7 +119,9 @@
         <div class="text-box">
           <b>Name:</b> <span id="overlayName">-</span><br />
           <b>Ability:</b> <span id="overlayAbility">-</span><br />
-          <b>Level:</b> <span id="overlayLevel" class="level-value">0.0</span><span id="overlayLevelNeedle" class="needle hidden-inline"> 💉</span>
+          <b>Level:</b>
+          <span id="overlayLevel" class="level-value">0.0</span>
+          <span id="overlayLevelNeedle" class="needle hidden-inline">💉</span>
         </div>
       </div>
 
@@ -131,14 +140,15 @@
 
       <div class="help-section">
         <p>Click <b>Generate Ability</b> to roll a random ability level and stat spread.</p>
-        <p>The level roll now follows a <b>bell curve centered at 2.7</b>. That means levels close to <b>2.7</b> are the most likely, and levels farther away become less likely.</p>
-        <p>A level of <b>1.0</b> starts at the baseline, where all five basic stats are <b>1.0</b>. Changing the stats won't change the level and can only be changed a limited amount. The same level may generate different stats.</p>
-        <p>As level rises, total power grows upward with an exponential-style model, so higher levels become much stronger much faster.</p>
+        <p>The normal level roll follows a <b>bell curve centered at 2.7</b>, so values near 2.7 are most likely.</p>
+        <p>If <b>Take Ability Amplifier</b> is active, every level from <b>1.0 to 10.0</b> has the same chance.</p>
+        <p>A level of <b>1.0</b> starts with all five basic stats at <b>1.0</b>.</p>
+        <p>Higher levels scale upward with an exponential-style power model.</p>
         <p>You can lower one stat and use those freed points to raise another, as long as the total stays within the rolled limit.</p>
-        <p>For levels below <b>6.5</b>, stats stay below <b>10</b>. For <b>6.5+</b>, stats can go above <b>10</b> numerically.</p>
+        <p>The <b>Level Up</b> button raises level by a random amount. Small jumps are much more common than large jumps.</p>
+        <p>For levels below <b>6.5</b>, stats stay below <b>10</b>. For <b>6.5+</b>, stats can go above 10 numerically.</p>
         <p>The main chart scales to <b>10</b> or the largest current stat. The popup view chart stays visually capped at <b>10</b>.</p>
-        <p>If you want to make your own chart use <a href="https://atlasskies.github.io/unordinary-ability-chart-maker/" target="_blank" rel="noopener noreferrer">UnOrdinary Ability Chart Maker</a></p>
-        <p><i>This website is mainly for roleplaying.</i></p>
+        <p><i>This is mainly for roleplaying.</i> To make your own chart go to <a href="https://atlasskies.github.io/unordinary-ability-chart-maker/" target="_blank" rel="noopener noreferrer">UnOrdinary Ability Chart Maker</a></p>
       </div>
 
       <div class="help-stats">
