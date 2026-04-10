@@ -6,7 +6,6 @@ const STEP = 0.1;
 const POWER_EXPONENT = 1.85;
 const POWER_MULTIPLIER = 1.15;
 
-// Bell curve settings
 const LEVEL_MEAN = 2.7;
 const LEVEL_STD_DEV = 1.15;
 const LEVEL_MIN = 1.0;
@@ -17,6 +16,7 @@ let generatedTotal = 0;
 let currentColor = DEFAULT_COLOR;
 let overlayChart = null;
 let hasGenerated = false;
+let amplifierActive = false;
 
 function hexToRGBA(hex, alpha) {
   if (!hex) hex = DEFAULT_COLOR;
@@ -69,6 +69,16 @@ function normalCDF(x, mean, stdDev) {
 function getSublevelProbabilities() {
   const entries = [];
 
+  if (amplifierActive) {
+    for (let level = 1.0; level <= 10.0001; level += 0.1) {
+      entries.push({
+        level: round1(level).toFixed(1),
+        chance: 100 / 91
+      });
+    }
+    return entries;
+  }
+
   for (let level = 1.0; level <= 10.0001; level += 0.1) {
     const center = round1(level);
     const lower = center - 0.05;
@@ -113,6 +123,11 @@ function renderIndividualStats() {
       <span>${formatChance(item.chance)}</span>
     </div>
   `).join('');
+}
+
+function updateNeedles() {
+  document.getElementById('levelNeedle').classList.toggle('hidden-inline', !amplifierActive);
+  document.getElementById('overlayLevelNeedle').classList.toggle('hidden-inline', !amplifierActive);
 }
 
 const radarBackgroundPlugin = {
@@ -274,17 +289,19 @@ const mainChart = createRadar('mainChart', true);
 function randomNormal(mean, stdDev) {
   let u = 0;
   let v = 0;
-
   while (u === 0) u = Math.random();
   while (v === 0) v = Math.random();
-
   const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
   return mean + z * stdDev;
 }
 
 function weightedLevelRoll() {
-  let level;
+  if (amplifierActive) {
+    const step = Math.floor(Math.random() * 91);
+    return round1(1 + step * 0.1);
+  }
 
+  let level;
   do {
     level = randomNormal(LEVEL_MEAN, LEVEL_STD_DEV);
   } while (level < LEVEL_MIN || level > LEVEL_MAX);
@@ -382,6 +399,7 @@ function updateDisplay(ability) {
   document.getElementById('trickDisplay').textContent = ability.stats[2].toFixed(1);
   document.getElementById('recoveryDisplay').textContent = ability.stats[3].toFixed(1);
   document.getElementById('defenseDisplay').textContent = ability.stats[4].toFixed(1);
+  updateNeedles();
   updateMainChart();
 }
 
@@ -399,6 +417,85 @@ function runGeneration() {
     hasGenerated = true;
     document.getElementById('generateBtn').textContent = 'Regenerate Ability';
   }
+}
+
+function getLevelUpIncrement() {
+  const options = [
+    { value: 0.1, weight: 100 },
+    { value: 0.2, weight: 45 },
+    { value: 0.3, weight: 24 },
+    { value: 0.4, weight: 14 },
+    { value: 0.5, weight: 9 },
+    { value: 0.6, weight: 6 },
+    { value: 0.7, weight: 4 },
+    { value: 0.8, weight: 3 },
+    { value: 0.9, weight: 2 },
+    { value: 1.0, weight: 1.5 },
+    { value: 1.1, weight: 1.1 },
+    { value: 1.2, weight: 0.8 },
+    { value: 1.3, weight: 0.6 },
+    { value: 1.4, weight: 0.45 },
+    { value: 1.5, weight: 0.35 }
+  ];
+
+  const totalWeight = options.reduce((acc, item) => acc + item.weight, 0);
+  let roll = Math.random() * totalWeight;
+
+  for (const option of options) {
+    roll -= option.weight;
+    if (roll <= 0) return option.value;
+  }
+
+  return 0.1;
+}
+
+function applyLevelUp() {
+  if (!hasGenerated || !currentAbility) return;
+
+  const increase = getLevelUpIncrement();
+  const newLevel = round1(Math.min(10.0, currentAbility.level + increase));
+  const actualIncrease = round1(newLevel - currentAbility.level);
+
+  if (actualIncrease <= 0) return;
+
+  const oldTotal = generatedTotal;
+  const newTotal = getTargetTotal(newLevel);
+  let extraTotal = round1(newTotal - oldTotal);
+
+  currentAbility.level = newLevel;
+  generatedTotal = newTotal;
+
+  if (extraTotal > 0) {
+    const statCap = getStatCap(newLevel);
+
+    let weights = currentAbility.stats.map(v => Math.max(0.6, Math.pow(Math.max(v, 1), 1.35) * rand(0.85, 1.15)));
+    let loops = 0;
+
+    while (extraTotal > 0.0001 && loops < 5000) {
+      const availableIndices = [0, 1, 2, 3, 4].filter(i => currentAbility.stats[i] < statCap);
+      if (availableIndices.length === 0) break;
+
+      let weightedPool = availableIndices.map(i => ({ i, w: weights[i] }));
+      const totalW = weightedPool.reduce((acc, item) => acc + item.w, 0);
+      let roll = Math.random() * totalW;
+
+      let chosen = weightedPool[0].i;
+      for (const item of weightedPool) {
+        roll -= item.w;
+        if (roll <= 0) {
+          chosen = item.i;
+          break;
+        }
+      }
+
+      const add = Math.min(STEP, extraTotal, statCap - currentAbility.stats[chosen]);
+      currentAbility.stats[chosen] = round1(currentAbility.stats[chosen] + add);
+      extraTotal = round1(extraTotal - add);
+      loops++;
+    }
+  }
+
+  updateDisplay(currentAbility);
 }
 
 function adjustStat(index, direction) {
@@ -424,6 +521,16 @@ function adjustStat(index, direction) {
 }
 
 document.getElementById('generateBtn').addEventListener('click', runGeneration);
+document.getElementById('levelUpBtn').addEventListener('click', applyLevelUp);
+
+document.getElementById('amplifierBtn').addEventListener('click', () => {
+  amplifierActive = !amplifierActive;
+  document.getElementById('amplifierBtn').textContent = amplifierActive
+    ? 'Ability Amplifier Active'
+    : 'Take Ability Amplifier';
+  updateNeedles();
+  renderIndividualStats();
+});
 
 document.getElementById('colorPicker').addEventListener('input', (e) => {
   currentColor = e.target.value;
@@ -469,6 +576,7 @@ document.getElementById('viewBtn').addEventListener('click', () => {
     document.getElementById('abilityInput').value || '-';
   document.getElementById('overlayLevel').textContent =
     currentAbility.level.toFixed(1);
+  updateNeedles();
 
   const ctx = document.getElementById('overlayChartCanvas').getContext('2d');
 
@@ -516,6 +624,7 @@ document.getElementById('closeBtn').addEventListener('click', () => {
 });
 
 document.getElementById('helpBtn').addEventListener('click', () => {
+  renderIndividualStats();
   document.getElementById('helpOverlay').classList.remove('hidden');
 });
 
@@ -560,10 +669,13 @@ window.addEventListener('load', () => {
   generatedTotal = 0;
   currentColor = DEFAULT_COLOR;
   hasGenerated = false;
+  amplifierActive = false;
 
   document.getElementById('colorPicker').value = DEFAULT_COLOR;
   document.getElementById('generateBtn').textContent = 'Generate Ability';
+  document.getElementById('amplifierBtn').textContent = 'Take Ability Amplifier';
 
   renderIndividualStats();
+  updateNeedles();
   updateDisplay(currentAbility);
 });
