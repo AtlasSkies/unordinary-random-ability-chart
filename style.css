@@ -38,6 +38,7 @@ h1 {
   font-style: italic;
   color: #333;
   margin: 0;
+  font-weight: 700;
 }
 
 .subtitle {
@@ -46,6 +47,7 @@ h1 {
   color: #666;
   margin-top: 4px;
   text-align: center;
+  font-weight: 400;
 }
 
 .upload-img {
@@ -62,7 +64,7 @@ h1 {
   border-radius: 8px;
   padding: 10px 12px;
   width: clamp(220px, 28vw, 300px);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -72,9 +74,13 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-weight: bold;
   font-size: 15px;
   gap: 10px;
+  font-weight: 400;
+}
+
+.info-box label b {
+  font-weight: 700;
 }
 
 .generated-row {
@@ -84,6 +90,7 @@ h1 {
   padding: 4px 0;
   border-bottom: 1px solid #e8eef2;
   font-size: 15px;
+  font-weight: 400;
 }
 
 .generated-row:last-child {
@@ -91,13 +98,14 @@ h1 {
 }
 
 .generated-row span:first-child {
-  font-weight: bold;
+  font-weight: 700;
   font-style: italic;
 }
 
 .generated-row span:last-child {
   min-width: 48px;
   text-align: right;
+  font-weight: 400;
 }
 
 .controls {
@@ -123,17 +131,27 @@ input[type="text"] {
   border: 1px solid #ccc;
   padding: 4px 6px;
   font-family: inherit;
+  font-weight: 400;
 }
 
 input[type="file"] {
   max-width: 300px;
 }
 
+input[type="color"] {
+  width: 52px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
 button {
   margin-top: 4px;
   padding: 8px 14px;
   font-family: inherit;
-  font-weight: bold;
+  font-weight: 700;
   background-color: #92dfec;
   border: none;
   border-radius: 6px;
@@ -159,7 +177,7 @@ button:hover {
   height: clamp(320px, 42vw, 560px);
   background: white;
   border-radius: 16px;
-  box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
   padding: 18px;
   box-sizing: border-box;
 }
@@ -169,9 +187,10 @@ button:hover {
   background: #ffffff;
   border-radius: 8px;
   padding: 10px 12px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
   font-size: 13px;
   line-height: 1.4;
+  font-weight: 400;
 }
 
 .overlay {
@@ -180,7 +199,7 @@ button:hover {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -261,6 +280,11 @@ button:hover {
   padding: 10px;
   text-align: center;
   line-height: 1.5;
+  font-weight: 400;
+}
+
+.text-box b {
+  font-weight: 700;
 }
 
 .overlay-chart {
