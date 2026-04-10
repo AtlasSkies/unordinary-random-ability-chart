@@ -13,7 +13,7 @@
     <div class="left">
       <div class="title-block">
         <h1>UnOrdinary Random Ability Chart</h1>
-        <div class="subtitle">Randomized level and stat generator</div>
+        <div class="subtitle">By: Atlas Skie</div>
       </div>
 
       <input type="file" accept="image/*" id="imgInput" />
@@ -38,15 +38,21 @@
           <button id="viewBtn">View Character Chart</button>
         </div>
       </div>
-
-      <div class="notes">
-        <b>How this version works:</b><br>
-        The program randomly generates a level using weighted ranges centered near 2.7, then builds five ability stats from a shared stat budget. Higher levels usually get stronger totals, but the stats can still roll below the cap. Levels below 6.5 cannot roll a 10.
-      </div>
     </div>
 
-    <div class="chart-area">
-      <canvas id="mainChart"></canvas>
+    <div class="right">
+      <div class="chart-area">
+        <canvas id="mainChart"></canvas>
+      </div>
+
+      <div class="rates-box">
+        <div class="rates-title">Tier Chances</div>
+        <div class="rate-row"><span>Low Tier:</span><span>33%</span></div>
+        <div class="rate-row"><span>Mid Tier:</span><span>53%</span></div>
+        <div class="rate-row"><span>Elite Tier:</span><span>12%</span></div>
+        <div class="rate-row"><span>High Tier:</span><span>2%</span></div>
+        <div class="rate-row"><span>God Tier:</span><span>0.00001%</span></div>
+      </div>
     </div>
   </div>
 
