@@ -13,7 +13,7 @@
     <div class="left">
       <div class="title-block">
         <h1>UnOrdinary Random Ability Chart</h1>
-        <div class="subtitle">By: Atlas Skies</div>
+        <div class="subtitle">By: Atlas Skie</div>
       </div>
 
       <input type="file" accept="image/*" id="imgInput" />
@@ -22,7 +22,7 @@
       <div class="info-box">
         <label><b>Name:</b> <input type="text" id="nameInput" /></label>
         <label><b>Ability:</b> <input type="text" id="abilityInput" /></label>
-        <label><b>Level:</b> <span id="levelDisplay" class="level-value">0.0</span></label>
+        <label><b>Level:</b> <span id="levelDisplay" class="level-value">0.0</span><span id="levelNeedle" class="needle hidden-inline">💉</span></label>
         <label><b>Ability Color:</b> <input type="color" id="colorPicker" value="#92dfec" /></label>
 
         <div class="stat-row" data-stat="0">
@@ -83,15 +83,19 @@
           <button id="viewBtn" type="button">View Character Chart</button>
           <button id="helpBtn" type="button">How It Works</button>
         </div>
+        <div class="button-row second-row">
+          <button id="amplifierBtn" type="button">Take Ability Amplifier</button>
+          <button id="levelUpBtn" type="button">Level Up</button>
+        </div>
       </div>
 
       <div class="rates-box">
         <div class="rates-title">Tier Chances</div>
         <div class="rate-row"><span>Bell Curve Center:</span><span>2.7</span></div>
-        <div class="rate-row"><span>Low Tier:</span><span>33%</span></div>
-        <div class="rate-row"><span>Mid Tier:</span><span>53%</span></div>
-        <div class="rate-row"><span>Elite Tier:</span><span>12%</span></div>
-        <div class="rate-row"><span>High Tiers:</span><span>2%</span></div>
+        <div class="rate-row"><span>Low Levels:</span><span>More common</span></div>
+        <div class="rate-row"><span>Mid Levels:</span><span>Most common</span></div>
+        <div class="rate-row"><span>High Levels:</span><span>Rare</span></div>
+        <div class="rate-row"><span>God Tiers:</span><span>Very rare</span></div>
       </div>
     </div>
   </div>
@@ -108,7 +112,7 @@
         <div class="text-box">
           <b>Name:</b> <span id="overlayName">-</span><br />
           <b>Ability:</b> <span id="overlayAbility">-</span><br />
-          <b>Level:</b> <span id="overlayLevel" class="level-value">0.0</span>
+          <b>Level:</b> <span id="overlayLevel" class="level-value">0.0</span><span id="overlayLevelNeedle" class="needle hidden-inline"> 💉</span>
         </div>
       </div>
 
@@ -138,7 +142,7 @@
       </div>
 
       <div class="help-stats">
-        <div class="help-stats-title">Approximate Chance of Each Level</div>
+        <div class="help-stats-title">Approximate Chance of Each Sublevel</div>
         <div id="individualStatsGrid" class="individual-stats-grid"></div>
       </div>
     </div>
