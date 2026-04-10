@@ -5,6 +5,7 @@ const LABELS = ['Power', 'Speed', 'Trick', 'Recovery', 'Defense'];
 let currentAbility = null;
 let currentColor = DEFAULT_COLOR;
 let overlayChart = null;
+let hasGenerated = false;
 
 function hexToRGBA(hex, alpha) {
   if (!hex) hex = DEFAULT_COLOR;
@@ -30,7 +31,7 @@ const radarBackgroundPlugin = {
     const cx = r.xCenter;
     const cy = r.yCenter;
     const radius = r.drawingArea;
-    const N = chart.data.labels.length;
+    const count = chart.data.labels.length;
     const start = -Math.PI / 2;
 
     const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
@@ -41,10 +42,10 @@ const radarBackgroundPlugin = {
     ctx.save();
     ctx.beginPath();
 
-    for (let i = 0; i < N; i++) {
-      const a = start + (i * 2 * Math.PI / N);
-      const x = cx + radius * Math.cos(a);
-      const y = cy + radius * Math.sin(a);
+    for (let i = 0; i < count; i++) {
+      const angle = start + (i * 2 * Math.PI / count);
+      const x = cx + radius * Math.cos(angle);
+      const y = cy + radius * Math.sin(angle);
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
@@ -64,16 +65,16 @@ const radarBackgroundPlugin = {
     const cx = r.xCenter;
     const cy = r.yCenter;
     const radius = r.drawingArea;
-    const N = chart.data.labels.length;
+    const count = chart.data.labels.length;
     const start = -Math.PI / 2;
 
     ctx.save();
 
     ctx.beginPath();
-    for (let i = 0; i < N; i++) {
-      const a = start + (i * 2 * Math.PI / N);
-      const x = cx + radius * Math.cos(a);
-      const y = cy + radius * Math.sin(a);
+    for (let i = 0; i < count; i++) {
+      const angle = start + (i * 2 * Math.PI / count);
+      const x = cx + radius * Math.cos(angle);
+      const y = cy + radius * Math.sin(angle);
       ctx.moveTo(cx, cy);
       ctx.lineTo(x, y);
     }
@@ -82,10 +83,10 @@ const radarBackgroundPlugin = {
     ctx.stroke();
 
     ctx.beginPath();
-    for (let i = 0; i < N; i++) {
-      const a = start + (i * 2 * Math.PI / N);
-      const x = cx + radius * Math.cos(a);
-      const y = cy + radius * Math.sin(a);
+    for (let i = 0; i < count; i++) {
+      const angle = start + (i * 2 * Math.PI / count);
+      const x = cx + radius * Math.cos(angle);
+      const y = cy + radius * Math.sin(angle);
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
@@ -121,9 +122,9 @@ const axisTitlesPlugin = {
     ctx.lineWidth = 4;
 
     labels.forEach((label, i) => {
-      const a = base + (i * 2 * Math.PI / labels.length);
-      const x = cx + baseRadius * Math.cos(a);
-      let y = cy + baseRadius * Math.sin(a);
+      const angle = base + (i * 2 * Math.PI / labels.length);
+      const x = cx + baseRadius * Math.cos(angle);
+      let y = cy + baseRadius * Math.sin(angle);
 
       if (i === 0) y -= 5;
       if (chart.canvas.id === 'overlayChartCanvas' && (i === 1 || i === 4)) {
@@ -158,7 +159,9 @@ function createRadar(canvasId, withBackground) {
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      layout: { padding: { top: 25, bottom: 25, left: 10, right: 10 } },
+      layout: {
+        padding: { top: 25, bottom: 25, left: 10, right: 10 }
+      },
       scales: {
         r: {
           min: 0,
@@ -297,12 +300,17 @@ function updateDisplay(ability) {
   updateMainChart();
 }
 
-function rerollAbility() {
+function runGeneration() {
   currentAbility = generateAbility();
   updateDisplay(currentAbility);
+
+  if (!hasGenerated) {
+    hasGenerated = true;
+    document.getElementById('generateBtn').textContent = 'Regenerate Ability';
+  }
 }
 
-document.getElementById('rerollBtn').addEventListener('click', rerollAbility);
+document.getElementById('generateBtn').addEventListener('click', runGeneration);
 
 document.getElementById('colorPicker').addEventListener('input', (e) => {
   currentColor = e.target.value;
@@ -315,12 +323,12 @@ document.getElementById('colorPicker').addEventListener('input', (e) => {
   }
 });
 
-document.getElementById('imgInput').addEventListener('change', e => {
+document.getElementById('imgInput').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = ev => {
+  reader.onload = (ev) => {
     document.getElementById('uploadedImg').src = ev.target.result;
   };
   reader.readAsDataURL(file);
@@ -336,9 +344,12 @@ document.getElementById('viewBtn').addEventListener('click', () => {
 
   document.getElementById('overlay').classList.remove('hidden');
   document.getElementById('overlayImg').src = document.getElementById('uploadedImg').src;
-  document.getElementById('overlayName').textContent = document.getElementById('nameInput').value || '-';
-  document.getElementById('overlayAbility').textContent = document.getElementById('abilityInput').value || '-';
-  document.getElementById('overlayLevel').textContent = currentAbility.level.toFixed(1);
+  document.getElementById('overlayName').textContent =
+    document.getElementById('nameInput').value || '-';
+  document.getElementById('overlayAbility').textContent =
+    document.getElementById('abilityInput').value || '-';
+  document.getElementById('overlayLevel').textContent =
+    currentAbility.level.toFixed(1);
 
   const ctx = document.getElementById('overlayChartCanvas').getContext('2d');
 
@@ -361,7 +372,9 @@ document.getElementById('viewBtn').addEventListener('click', () => {
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      layout: { padding: { top: 25, bottom: 25, left: 10, right: 10 } },
+      layout: {
+        padding: { top: 25, bottom: 25, left: 10, right: 10 }
+      },
       scales: {
         r: {
           min: 0,
@@ -397,9 +410,11 @@ document.getElementById('downloadBtn').addEventListener('click', async () => {
     useCORS: true,
     backgroundColor: null,
     logging: false
-  }).then(canvas => {
+  }).then((canvas) => {
     const link = document.createElement('a');
-    const cleanName = (document.getElementById('nameInput').value || 'Unnamed').replace(/\s+/g, '_');
+    const cleanName = (
+      document.getElementById('nameInput').value || 'Unnamed'
+    ).replace(/\s+/g, '_');
     link.download = `${cleanName}_CharacterChart.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
@@ -416,6 +431,10 @@ window.addEventListener('load', () => {
   };
 
   currentColor = DEFAULT_COLOR;
+  hasGenerated = false;
+
   document.getElementById('colorPicker').value = DEFAULT_COLOR;
+  document.getElementById('generateBtn').textContent = 'Generate Ability';
+
   updateDisplay(currentAbility);
 });
