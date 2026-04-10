@@ -1,0 +1,377 @@
+const BASE_COLOR = '#92dfec';
+const FILL_ALPHA = 0.65;
+const LABELS = ['Power', 'Speed', 'Trick', 'Recovery', 'Defense'];
+
+let currentAbility = null;
+let overlayChart = null;
+
+function hexToRGBA(hex, alpha) {
+  if (!hex) hex = BASE_COLOR;
+  if (hex.startsWith('rgb')) {
+    return hex.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
+  }
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+const radarBackgroundPlugin = {
+  id: 'customPentagonBackground',
+  beforeDatasetsDraw(chart) {
+    const opts = chart.config.options.customBackground;
+    if (!opts?.enabled) return;
+
+    const r = chart.scales.r;
+    const ctx = chart.ctx;
+    const cx = r.xCenter;
+    const cy = r.yCenter;
+    const radius = r.drawingArea;
+    const N = chart.data.labels.length;
+    const start = -Math.PI / 2;
+
+    const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    gradient.addColorStop(0, '#f8fcff');
+    gradient.addColorStop(0.33, BASE_COLOR);
+    gradient.addColorStop(1, BASE_COLOR);
+
+    ctx.save();
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const a = start + (i * 2 * Math.PI / N);
+      const x = cx + radius * Math.cos(a);
+      const y = cy + radius * Math.sin(a);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = gradient;
+    ctx.fill();
+    ctx.restore();
+  },
+
+  afterDatasetsDraw(chart) {
+    const opts = chart.config.options.customBackground;
+    if (!opts?.enabled) return;
+
+    const r = chart.scales.r;
+    const ctx = chart.ctx;
+    const cx = r.xCenter;
+    const cy = r.yCenter;
+    const radius = r.drawingArea;
+    const N = chart.data.labels.length;
+    const start = -Math.PI / 2;
+
+    ctx.save();
+
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const a = start + (i * 2 * Math.PI / N);
+      const x = cx + radius * Math.cos(a);
+      const y = cy + radius * Math.sin(a);
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = '#35727d';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const a = start + (i * 2 * Math.PI / N);
+      const x = cx + radius * Math.cos(a);
+      const y = cy + radius * Math.sin(a);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = '#184046';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.restore();
+  }
+};
+
+const axisTitlesPlugin = {
+  id: 'axisTitles',
+  afterDraw(chart) {
+    const ctx = chart.ctx;
+    const r = chart.scales.r;
+    const labels = chart.data.labels;
+    if (!labels) return;
+
+    const cx = r.xCenter;
+    const cy = r.yCenter;
+    const base = -Math.PI / 2;
+    const baseRadius = r.drawingArea * 1.1;
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'italic 18px Optima';
+    ctx.strokeStyle = BASE_COLOR;
+    ctx.fillStyle = 'white';
+    ctx.lineWidth = 4;
+
+    labels.forEach((label, i) => {
+      const a = base + (i * 2 * Math.PI / labels.length);
+      const x = cx + baseRadius * Math.cos(a);
+      let y = cy + baseRadius * Math.sin(a);
+
+      if (i === 0) y -= 5;
+      if (chart.canvas.id === 'overlayChartCanvas' && (i === 1 || i === 4)) y -= 25;
+
+      ctx.strokeText(label, x, y);
+      ctx.fillText(label, x, y);
+    });
+
+    ctx.restore();
+  }
+};
+
+function createRadar(canvasId, withBackground) {
+  const ctx = document.getElementById(canvasId).getContext('2d');
+
+  return new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: LABELS,
+      datasets: [{
+        data: [0, 0, 0, 0, 0],
+        backgroundColor: hexToRGBA(BASE_COLOR, FILL_ALPHA),
+        borderColor: BASE_COLOR,
+        borderWidth: 2,
+        pointBackgroundColor: '#fff',
+        pointBorderColor: BASE_COLOR,
+        pointRadius: canvasId === 'mainChart' ? 4 : 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      layout: { padding: { top: 25, bottom: 25, left: 10, right: 10 } },
+      scales: {
+        r: {
+          min: 0,
+          max: 10,
+          ticks: { display: false },
+          grid: { display: false },
+          angleLines: { color: '#6db5c0', lineWidth: 1 },
+          pointLabels: { color: 'transparent' }
+        }
+      },
+      customBackground: { enabled: withBackground },
+      plugins: { legend: { display: false } }
+    },
+    plugins: [axisTitlesPlugin, radarBackgroundPlugin]
+  });
+}
+
+const mainChart = createRadar('mainChart', true);
+
+function rand(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function round1(value) {
+  return Math.round(value * 10) / 10;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function weightedLevelRoll() {
+  const roll = Math.random() * 100;
+
+  if (roll < 33) return round1(rand(1.0, 1.9));
+  if (roll < 86) return round1(rand(2.0, 3.4));
+  if (roll < 98) return round1(rand(3.5, 4.9));
+
+  const highRoll = Math.random();
+
+  if (highRoll < 0.99999) {
+    return round1(rand(5.0, 5.9));
+  }
+
+  return round1(rand(6.0, 10.0));
+}
+
+function getBudgetRange(level) {
+  if (level < 2.0) return [4.0, 11.0];
+  if (level < 3.5) return [7.0, 17.0];
+  if (level < 5.0) return [11.0, 24.0];
+  if (level < 6.5) return [16.0, 31.0];
+  if (level < 8.0) return [22.0, 39.0];
+  return [28.0, 46.0];
+}
+
+function getStatCap(level) {
+  if (level < 2.0) return 4.0;
+  if (level < 3.5) return 6.0;
+  if (level < 5.0) return 8.0;
+  if (level < 6.5) return 9.9;
+  if (level < 8.0) return 10.8;
+  return 12.0;
+}
+
+function buildStatsFromLevel(level) {
+  const [budgetMin, budgetMax] = getBudgetRange(level);
+  const statCap = getStatCap(level);
+  const totalBudget = rand(budgetMin, budgetMax);
+
+  let weights = Array.from({ length: 5 }, () => rand(0.4, 1.7));
+  const weightSum = weights.reduce((a, b) => a + b, 0);
+
+  let stats = weights.map(w => (w / weightSum) * totalBudget);
+  stats = stats.map(v => clamp(v + rand(-0.45, 0.45), 0.8, statCap));
+
+  let currentSum = stats.reduce((a, b) => a + b, 0);
+  let loops = 0;
+
+  while (currentSum > totalBudget && loops < 400) {
+    const i = Math.floor(Math.random() * 5);
+    if (stats[i] > 0.8) {
+      stats[i] = Math.max(0.8, stats[i] - 0.1);
+      currentSum = stats.reduce((a, b) => a + b, 0);
+    }
+    loops++;
+  }
+
+  loops = 0;
+  while (currentSum < totalBudget - 0.15 && loops < 500) {
+    const i = Math.floor(Math.random() * 5);
+    if (stats[i] < statCap) {
+      const add = Math.min(0.1, totalBudget - currentSum, statCap - stats[i]);
+      stats[i] += add;
+      currentSum = stats.reduce((a, b) => a + b, 0);
+    }
+    loops++;
+  }
+
+  stats = stats.map(round1);
+
+  if (level < 6.5) {
+    stats = stats.map(v => Math.min(v, 9.9));
+  }
+
+  return {
+    level,
+    stats,
+    budget: round1(totalBudget)
+  };
+}
+
+function generateAbility() {
+  const level = weightedLevelRoll();
+  return buildStatsFromLevel(level);
+}
+
+function updateDisplay(ability) {
+  document.getElementById('levelDisplay').textContent = ability.level.toFixed(1);
+  document.getElementById('powerDisplay').textContent = ability.stats[0].toFixed(1);
+  document.getElementById('speedDisplay').textContent = ability.stats[1].toFixed(1);
+  document.getElementById('trickDisplay').textContent = ability.stats[2].toFixed(1);
+  document.getElementById('recoveryDisplay').textContent = ability.stats[3].toFixed(1);
+  document.getElementById('defenseDisplay').textContent = ability.stats[4].toFixed(1);
+
+  mainChart.data.datasets[0].data = ability.stats;
+  mainChart.update();
+}
+
+function rerollAbility() {
+  currentAbility = generateAbility();
+  updateDisplay(currentAbility);
+}
+
+document.getElementById('rerollBtn').addEventListener('click', rerollAbility);
+
+document.getElementById('imgInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('uploadedImg').src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('viewBtn').addEventListener('click', () => {
+  if (!currentAbility) rerollAbility();
+
+  document.getElementById('overlay').classList.remove('hidden');
+  document.getElementById('overlayImg').src = document.getElementById('uploadedImg').src;
+  document.getElementById('overlayName').textContent = document.getElementById('nameInput').value || '-';
+  document.getElementById('overlayAbility').textContent = document.getElementById('abilityInput').value || '-';
+  document.getElementById('overlayLevel').textContent = currentAbility.level.toFixed(1);
+
+  const ctx = document.getElementById('overlayChartCanvas').getContext('2d');
+
+  if (overlayChart) {
+    overlayChart.destroy();
+  }
+
+  overlayChart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: LABELS,
+      datasets: [{
+        data: currentAbility.stats.map(v => Math.min(v, 10)),
+        backgroundColor: hexToRGBA(BASE_COLOR, FILL_ALPHA),
+        borderColor: BASE_COLOR,
+        borderWidth: 2,
+        pointRadius: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      layout: { padding: { top: 25, bottom: 25, left: 10, right: 10 } },
+      scales: {
+        r: {
+          min: 0,
+          max: 10,
+          ticks: { display: false },
+          grid: { display: false },
+          angleLines: { color: '#6db5c0', lineWidth: 1 },
+          pointLabels: { color: 'transparent' }
+        }
+      },
+      customBackground: { enabled: true },
+      plugins: { legend: { display: false } }
+    },
+    plugins: [radarBackgroundPlugin, axisTitlesPlugin]
+  });
+});
+
+document.getElementById('closeBtn').addEventListener('click', () => {
+  document.getElementById('overlay').classList.add('hidden');
+});
+
+document.getElementById('downloadBtn').addEventListener('click', async () => {
+  const box = document.getElementById('characterBox');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const closeBtn = document.getElementById('closeBtn');
+
+  window.scrollTo(0, 0);
+  downloadBtn.style.visibility = 'hidden';
+  closeBtn.style.visibility = 'hidden';
+
+  await html2canvas(box, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: null,
+    logging: false
+  }).then(canvas => {
+    const link = document.createElement('a');
+    const cleanName = (document.getElementById('nameInput').value || 'Unnamed').replace(/\s+/g, '_');
+    link.download = `${cleanName}_CharacterChart.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+
+  downloadBtn.style.visibility = 'visible';
+  closeBtn.style.visibility = 'visible';
+});
+
+window.addEventListener('load', rerollAbility);
