@@ -24,6 +24,7 @@
         <label><b>Ability:</b> <input type="text" id="abilityInput" /></label>
         <label><b>Level:</b> <span id="levelDisplay" class="level-value">0.0</span></label>
         <label><b>Ability Color:</b> <input type="color" id="colorPicker" value="#92dfec" /></label>
+        <label><b>Available Points:</b> <span id="availablePoints" class="level-value">0.0</span></label>
 
         <div class="stat-row" data-stat="0">
           <span class="stat-name">Power</span>
@@ -31,7 +32,6 @@
             <button class="adjust-btn minus" type="button">−</button>
             <span id="powerDisplay" class="stat-value">0.0</span>
             <button class="adjust-btn plus" type="button">+</button>
-            <button class="lock-btn" id="lock0" type="button">Lock</button>
           </div>
         </div>
 
@@ -41,7 +41,6 @@
             <button class="adjust-btn minus" type="button">−</button>
             <span id="speedDisplay" class="stat-value">0.0</span>
             <button class="adjust-btn plus" type="button">+</button>
-            <button class="lock-btn" id="lock1" type="button">Lock</button>
           </div>
         </div>
 
@@ -51,7 +50,6 @@
             <button class="adjust-btn minus" type="button">−</button>
             <span id="trickDisplay" class="stat-value">0.0</span>
             <button class="adjust-btn plus" type="button">+</button>
-            <button class="lock-btn" id="lock2" type="button">Lock</button>
           </div>
         </div>
 
@@ -61,7 +59,6 @@
             <button class="adjust-btn minus" type="button">−</button>
             <span id="recoveryDisplay" class="stat-value">0.0</span>
             <button class="adjust-btn plus" type="button">+</button>
-            <button class="lock-btn" id="lock3" type="button">Lock</button>
           </div>
         </div>
 
@@ -71,12 +68,11 @@
             <button class="adjust-btn minus" type="button">−</button>
             <span id="defenseDisplay" class="stat-value">0.0</span>
             <button class="adjust-btn plus" type="button">+</button>
-            <button class="lock-btn" id="lock4" type="button">Lock</button>
           </div>
         </div>
 
         <div class="status-note" id="statusNote">
-          Generate an ability, then use + / − and Lock to rebalance the stats.
+          Generate an ability, then lower and raise stats manually without going above the generated total.
         </div>
       </div>
     </div>
